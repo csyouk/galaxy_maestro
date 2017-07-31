@@ -11,6 +11,7 @@ void explosion(void);
 void Move_Object(void);
 void collision_detect(void);
 void Draw_Object(void);
+void Galaxy_Maestro(void);
 
 struct Object
 {
@@ -27,6 +28,7 @@ struct Object
 	int beam_flag;		  // beam 발사 됐는지 여부 flag
 	int cd_flag;		  // collision detection flag
 	int dir[2];           // x,y 방향의 방향정보. 1과 -1 값이 있다.
+	int missile_dir;      // 1,2,3,4 키 입력값을 방향값으로 설정한다. 이 값이 미사일의 방향과 동일하다.
 };
 
 /* 5:5:5:I Color Definition */
@@ -40,7 +42,7 @@ enum Color{
 };
 
 struct Object Tank = {0,1,{0,10},{0,10},{0,10},{30,10},
-					RED, 4, 8, 0, 0, {1,1}};
+					RED, 4, 8, 0, 0, {1,1}, 1};
 struct Object Gun = {0,1,{160,300},{160,300},{160,300},{30,30},
 					BLUE, 4, 7, 0, 0, {1,1}};
 struct Object Tank_beam = {0,1,{319,239},{319,239},{319,239},{10,10},
@@ -89,25 +91,16 @@ void Move_Object(void)
 	int key = 0;
 	if(Timer0_Check_Expired())
 	{
-//		Tank.timer++;
 		Gun.timer++;
 		Tank_beam.timer++;
 
 		key = Key_Get_Pressed();
-//		Uart_Printf("key : %d\n", key);
-//		if(key == 2){
-//			Tank.timer = 0;
-//			Tank.pos_back[0] = Tank.pos[0];			 // 현재의 위치를 벡업해 놓는다.
-//			Tank.pos[0] = Tank.pos[0] + Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
-//			Tank.move_flag = 1;						 //
-//		}
 
-		// 탱크를 우측으로 움직임.
-		if( key == 4)
+		// 탱크를 위로 움직임.
+		if(key == 1)
 		{
-
-			Tank.pos_back[0] = Tank.pos[0];			 // 현재의 위치를 벡업해 놓는다.
-			Tank.pos[0] = Tank.pos[0] + Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
+			Tank.pos_back[1] = Tank.pos[1];			 // 현재의 위치를 벡업해 놓는다.
+			Tank.pos[1] = Tank.pos[1] - Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
 			Tank.move_flag = 1;						 //
 		}
 		// 탱크를 좌측으로 움직임.
@@ -115,6 +108,21 @@ void Move_Object(void)
 		{
 			Tank.pos_back[0] = Tank.pos[0];			 // 현재의 위치를 벡업해 놓는다.
 			Tank.pos[0] = Tank.pos[0] - Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
+			Tank.move_flag = 1;						 //
+		}
+		// 탱크를 위로 움직임.
+		if(key == 3)
+		{
+			Tank.pos_back[1] = Tank.pos[1];			 // 현재의 위치를 벡업해 놓는다.
+			Tank.pos[1] = Tank.pos[1] + Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
+			Tank.move_flag = 1;						 //
+		}
+		// 탱크를 우측으로 움직임.
+		if(key == 4)
+		{
+
+			Tank.pos_back[0] = Tank.pos[0];			 // 현재의 위치를 벡업해 놓는다.
+			Tank.pos[0] = Tank.pos[0] + Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
 			Tank.move_flag = 1;						 //
 		}
 
