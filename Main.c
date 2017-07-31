@@ -486,20 +486,25 @@ struct Object
 	int pos_init[2];  	  // 초기 좌표.
 	int pos_back[2];      // 이전 좌표의 정보. 이미지를 사용할 시, 이 좌표를 토대로 이전의 이미지를 지워야함.
 	int size[2];	      // width, height
+
 	unsigned short color; // 나중에 이미지로 대체.
-	int speed_step;	 	  //
-	int move_step;		  //
-	int beam_flag;		  //
-	int cd_flag;		  //
+	int speed_step;	 	  // 이미지가 얼마나 빨리 이동되게 할 것인지.
+	int move_step;		  // 이미지를 얼마나 이동시킬 것인가?
+	int beam_flag;		  // beam 발사 됐는지 여부 flag
+	int cd_flag;		  // collision detection flag
+	int dir[2];           // x,y 방향의 방향정보. 1과 -1 값이 있다.
 };
 
-struct Object Ufo = {0,1,{0,10},{0,10},{0,10},{30,10},RED, 1, 8, 0, 0};
-struct Object Gun = {0,1,{160,300},{160,300},{160,300},{30,30},BLUE, 4, 7, 0, 0};
-struct Object Ufo_beam = {0,1,{319,239},{319,239},{319,239},{10,10},GREEN, 3, 10, 0, 0};
+struct Object Tank = {0,1,{0,10},{0,10},{0,10},{30,10},
+					RED, 4, 8, 0, 0, {1,1}};
+struct Object Gun = {0,1,{160,300},{160,300},{160,300},{30,30},
+					BLUE, 4, 7, 0, 0, {1,1}};
+struct Object Tank_beam = {0,1,{319,239},{319,239},{319,239},{10,10},
+					GREEN, 3, 10, 0, 0, {1,1}};
 
 void explosion(void)
 {
-	if(Ufo_beam.cd_flag == 1 || Gun.cd_flag == 1)
+	if(Tank_beam.cd_flag == 1 || Gun.cd_flag == 1)
 	{
 		Lcd_Draw_Bar(Gun.pos_back[0], Gun.pos_back[1]-40, Gun.pos_back[0] + 30, Gun.pos_back[1], WHITE);
 		Timer4_Delay(100);
@@ -516,18 +521,36 @@ void Move_Object(void)
 	int key = 0;
 	if(Timer0_Check_Expired())
 	{
-		Ufo.timer++;
+//		Tank.timer++;
 		Gun.timer++;
-		Ufo_beam.timer++;
+		Tank_beam.timer++;
 
 		key = Key_Get_Pressed();
+//		Uart_Printf("key : %d\n", key);
+//		if(key == 2){
+//			Tank.timer = 0;
+//			Tank.pos_back[0] = Tank.pos[0];			 // 현재의 위치를 벡업해 놓는다.
+//			Tank.pos[0] = Tank.pos[0] + Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
+//			Tank.move_flag = 1;						 //
+//		}
 
-		if(Ufo.timer >= Ufo.speed_step)
+		// 탱크를 우측으로 움직임.
+		if(Tank.timer >= Tank.speed_step || key == 4)
 		{
-			Ufo.timer = 0;
-			Ufo.pos_back[0] = Ufo.pos[0];			 // 현재의 위치를 벡업해 놓는다.
-			Ufo.pos[0] = Ufo.pos[0] + Ufo.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
-			Ufo.move_flag = 1;						 //
+			Tank.timer++;
+			Tank.timer = 0;
+			Tank.pos_back[0] = Tank.pos[0];			 // 현재의 위치를 벡업해 놓는다.
+			Tank.pos[0] = Tank.pos[0] + Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
+			Tank.move_flag = 1;						 //
+		}
+		// 탱크를 좌측으로 움직임.
+		if(Tank.timer >= Tank.speed_step || key == 2)
+		{
+			Tank.timer++;
+			Tank.timer = 0;
+			Tank.pos_back[0] = Tank.pos[0];			 // 현재의 위치를 벡업해 놓는다.
+			Tank.pos[0] = Tank.pos[0] - Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
+			Tank.move_flag = 1;						 //
 		}
 
 		if(Gun.timer >= Gun.speed_step)
@@ -539,37 +562,37 @@ void Move_Object(void)
 		}
 		if(key == 5)
 		{
-			if(Ufo_beam.beam_flag == 0)
+			if(Tank_beam.beam_flag == 0)
 			{
-				Ufo_beam.beam_flag = 1;
+				Tank_beam.beam_flag = 1;
 			}
 		}
-		if(Ufo_beam.beam_flag == 0)
+		if(Tank_beam.beam_flag == 0)
 		{
-			Ufo_beam.pos_init[0] = Ufo.pos[0]+13;
-			Ufo_beam.pos_init[1] = Ufo.pos[1]+12;
-			Ufo_beam.pos_back[0] = Ufo_beam.pos_init[0];
-			Ufo_beam.pos_back[1] = Ufo_beam.pos_init[1];
-			Ufo_beam.pos[0] = Ufo_beam.pos_init[0];
-			Ufo_beam.pos[1] = Ufo_beam.pos_init[1];
+			Tank_beam.pos_init[0] = Tank.pos[0]+13;
+			Tank_beam.pos_init[1] = Tank.pos[1]+12;
+			Tank_beam.pos_back[0] = Tank_beam.pos_init[0];
+			Tank_beam.pos_back[1] = Tank_beam.pos_init[1];
+			Tank_beam.pos[0] = Tank_beam.pos_init[0];
+			Tank_beam.pos[1] = Tank_beam.pos_init[1];
 		}
-		if(Ufo_beam.beam_flag != 0 && Ufo_beam.timer >= Ufo_beam.speed_step)
+		if(Tank_beam.beam_flag != 0 && Tank_beam.timer >= Tank_beam.speed_step)
 		{
-			Ufo_beam.timer = 0;
-			Ufo_beam.pos_back[1] = Ufo_beam.pos[1];
-			Ufo_beam.pos[1] = Ufo_beam.pos[1] + Ufo_beam.move_step;
-			Ufo_beam.move_flag = 1;
+			Tank_beam.timer = 0;
+			Tank_beam.pos_back[1] = Tank_beam.pos[1];
+			Tank_beam.pos[1] = Tank_beam.pos[1] + Tank_beam.move_step;
+			Tank_beam.move_flag = 1;
 		}
 
-		Uart_Printf("Ufo.timer %d / Ufo.speed_step %d\n", Ufo.timer, Ufo.speed_step);
+//		Uart_Printf("Tank.timer %d / Tank.speed_step %d\n", Tank.timer, Tank.speed_step);
 	}
 }
 
 void Draw_Object(void)
 {
-	if((Ufo.pos[0] >= WIDTH))
+	if((Tank.pos[0] >= WIDTH))
 	{
-		Ufo.pos[0] = Ufo.pos_init[0];
+		Tank.pos[0] = Tank.pos_init[0];
 	}
 
 	if((Gun.pos[1] < 0))
@@ -577,16 +600,16 @@ void Draw_Object(void)
 		Gun.pos[1] = Gun.pos_init[1];
 		Lcd_Draw_Bar(Gun.pos_back[0], 0, Gun.pos_back[0] + Gun.size[0], 20, BACK_COLOR);
 	}
-	if((Ufo_beam.pos[1] > 239))
+	if((Tank_beam.pos[1] > 239))
 	{
-		Ufo_beam.beam_flag = 0;
+		Tank_beam.beam_flag = 0;
 	}
 
-	if(Ufo.move_flag != 0) // 이미지가 움직였으면, 새로운 곳을 그리고, 그 이전 좌표는 지운다.
+	if(Tank.move_flag != 0) // 이미지가 움직였으면, 새로운 곳을 그리고, 그 이전 좌표는 지운다.
 	{
-		Lcd_Draw_Bar(Ufo.pos_back[0], Ufo.pos_back[1], Ufo.pos_back[0] + Ufo.size[0], Ufo.pos_back[1] + Ufo.size[1], BACK_COLOR);
-		Lcd_Draw_Bar(Ufo.pos[0], Ufo.pos[1], Ufo.pos[0] + Ufo.size[0], Ufo.pos[1] + Ufo.size[1], Ufo.color);
-		Ufo.move_flag = 0;
+		Lcd_Draw_Bar(Tank.pos_back[0], Tank.pos_back[1], Tank.pos_back[0] + Tank.size[0], Tank.pos_back[1] + Tank.size[1], BACK_COLOR);
+		Lcd_Draw_Bar(Tank.pos[0], Tank.pos[1], Tank.pos[0] + Tank.size[0], Tank.pos[1] + Tank.size[1], Tank.color);
+		Tank.move_flag = 0;
 	}
 	if(Gun.move_flag != 0)
 	{
@@ -594,45 +617,47 @@ void Draw_Object(void)
 		Lcd_Draw_Bar(Gun.pos[0], Gun.pos[1], Gun.pos[0] + Gun.size[0], Gun.pos[1] - Gun.size[1], Gun.color);
 		Gun.move_flag = 0;
 	}
-	if(Ufo_beam.move_flag != 0)
+	if(Tank_beam.move_flag != 0)
 	{
-		Lcd_Draw_Bar(Ufo_beam.pos_back[0], Ufo_beam.pos_back[1], Ufo_beam.pos_back[0] + Ufo_beam.size[0], Ufo_beam.pos_back[1] + Ufo_beam.size[1], BACK_COLOR);
-		Lcd_Draw_Bar(Ufo_beam.pos[0], Ufo_beam.pos[1], Ufo_beam.pos[0] + Ufo_beam.size[0], Ufo_beam.pos[1] + Ufo_beam.size[1], Ufo_beam.color);
-		Ufo_beam.move_flag = 0;
+		Lcd_Draw_Bar(Tank_beam.pos_back[0], Tank_beam.pos_back[1], Tank_beam.pos_back[0] + Tank_beam.size[0], Tank_beam.pos_back[1] + Tank_beam.size[1], BACK_COLOR);
+		Lcd_Draw_Bar(Tank_beam.pos[0], Tank_beam.pos[1], Tank_beam.pos[0] + Tank_beam.size[0], Tank_beam.pos[1] + Tank_beam.size[1], Tank_beam.color);
+		Tank_beam.move_flag = 0;
 	}
 	explosion();
-	if(Ufo_beam.cd_flag == 1)
+	if(Tank_beam.cd_flag == 1)
 	{
-		Lcd_Draw_Bar(Ufo_beam.pos[0], Ufo_beam.pos[1], Ufo_beam.pos[0] + Ufo_beam.size[0], Ufo_beam.pos[1] + Ufo_beam.size[1], BACK_COLOR);
-		Ufo_beam.cd_flag = 0;
-		Ufo_beam.beam_flag = 0;
+		Lcd_Draw_Bar(Tank_beam.pos[0], Tank_beam.pos[1], Tank_beam.pos[0] + Tank_beam.size[0], Tank_beam.pos[1] + Tank_beam.size[1], BACK_COLOR);
+		Tank_beam.cd_flag = 0;
+		Tank_beam.beam_flag = 0;
 	}
 	if(Gun.cd_flag == 1)
 	{
-		Lcd_Draw_Bar(Gun.pos[0], Gun.pos[1], Gun.pos[0] + Gun.size[0], Gun.pos[1] + Gun.size[1], BACK_COLOR);
+		Lcd_Draw_Bar(Gun.pos[0], Gun.pos[1],
+				Gun.pos[0] + Gun.size[0],
+				Gun.pos[1] + Gun.size[1],
+				BACK_COLOR);
 		Gun.cd_flag = 0;
 		Gun.pos[1] = Gun.pos_init[1];
 	}
-
 }
 
 void collision_detect(void)
 {
-	if(Ufo_beam.beam_flag != 0 && Ufo_beam.cd_flag == 0)
+	if(Tank_beam.beam_flag != 0 && Tank_beam.cd_flag == 0)
 	{
-		if((Ufo_beam.pos[0] > Gun.pos[0]) && \
-		   (Ufo_beam.pos[0] + Ufo_beam.size[0] < Gun.pos[0] + Gun.size[0]) )
+		if((Tank_beam.pos[0] > Gun.pos[0]) && \
+		   (Tank_beam.pos[0] + Tank_beam.size[0] < Gun.pos[0] + Gun.size[0]) )
 		{
-			if((Ufo_beam.pos[1] + Ufo_beam.size[1]  >= Gun.pos[1]))
+			if((Tank_beam.pos[1] + Tank_beam.size[1]  >= Gun.pos[1]))
 			{
 
-				Ufo_beam.move_flag = 1;
+				Tank_beam.move_flag = 1;
 				Gun.move_flag = 1;
 
 				Gun.timer = 0;
-				Ufo_beam.timer = 0;
+				Tank_beam.timer = 0;
 
-				Ufo_beam.cd_flag = 1;
+				Tank_beam.cd_flag = 1;
 				Gun.cd_flag = 1;
 			}
 		}
