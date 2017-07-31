@@ -97,6 +97,9 @@ void Main(void)
 void User_Main(void)
 {
 	srand(RTC_Get_Time());
+// graphic test
+//	Lcd_Draw_Rect(20,20,120,120,0xf800);
+//	Lcd_Draw_Rect(70,70,220,220,0x003e);
 
 	for(;;){
 		Lcd_Control_Brightness(5);
