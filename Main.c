@@ -104,7 +104,7 @@ void Key_Test(void);
 void Buzzer_Test(void);
 void Timer_Test(void);
 void Simple_Example(void);
-void My_Game(void);
+//void My_Game(void);
 
 void User_Main(void)
 {
@@ -153,7 +153,7 @@ void User_Main(void)
 			case 6 : Key_Test(); break;
 			case 7 : Timer_Test(); break;
 			case 8 : Simple_Example(); break;
-			case 9 : My_Game(); break;
+//			case 9 : My_Game(); break;
 			default : Uart_Printf("Wrong Number!\n"); break;
 		}
 
@@ -493,7 +493,7 @@ struct Object
 	int cd_flag;		  //
 };
 
-struct Object Ufo = {0,1,{0,10},{0,10},{0,10},{30,10},RED, 3, 8, 0, 0};
+struct Object Ufo = {0,1,{0,10},{0,10},{0,10},{30,10},RED, 1, 8, 0, 0};
 struct Object Gun = {0,1,{160,300},{160,300},{160,300},{30,30},BLUE, 4, 7, 0, 0};
 struct Object Ufo_beam = {0,1,{319,239},{319,239},{319,239},{10,10},GREEN, 3, 10, 0, 0};
 
@@ -560,6 +560,8 @@ void Move_Object(void)
 			Ufo_beam.pos[1] = Ufo_beam.pos[1] + Ufo_beam.move_step;
 			Ufo_beam.move_flag = 1;
 		}
+
+		Uart_Printf("Ufo.timer %d / Ufo.speed_step %d\n", Ufo.timer, Ufo.speed_step);
 	}
 }
 
