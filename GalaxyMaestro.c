@@ -39,14 +39,19 @@ line 4 : W_
 
 
 void Game_Init(void);
-void explosion(void);
+void Check_Explosion(void);
 void Update_Object(void);
 void collision_detect(void);
 void Draw_Object(void);
 void Galaxy_Maestro(void);
 void Update_Tank_Depend_On_Key(int);
 void Update_Ufo(void);
-void Update_TankBeam_Depend_On_Key(int);
+void Update_TankBeam(int);
+void Draw_Tank(void);
+void Draw_Tank_Beam(void);
+void Draw_Ufo(void);
+void Draw_Tank_Beam_Crashed(void);
+void Draw_Ufo_Crashed(void);
 
 struct Object
 {
@@ -158,7 +163,7 @@ void Update_Object(void)
 		key = Key_Get_Pressed();
 		Update_Ufo();
 		Update_Tank_Depend_On_Key(key);
-		Update_TankBeam_Depend_On_Key(key);
+		Update_TankBeam(key);
 
 		//		Uart_Printf("Tank.timer %d / Tank.speed_step %d\n", Tank.timer, Tank.speed_step);
 	}
@@ -237,15 +242,17 @@ void Update_Tank_Depend_On_Key(int key)
 }
 
 
-void Update_TankBeam_Depend_On_Key(int key)
+void Update_TankBeam(int key)
 {
 	Tank_beam.timer++;
 	if(key == FIRE)
 	{
-		if(Tank_beam.beam_flag == NOT_FIRED)
-		{
-			Tank_beam.beam_flag = FIRED;
-		}
+		Tank_beam.beam_flag = FIRED;
+		// useless if statement
+		// if(Tank_beam.beam_flag == NOT_FIRED)
+		// {
+		// 	Tank_beam.beam_flag = FIRED;
+		// }
 	}
 	if(Tank_beam.beam_flag == NOT_FIRED)
 	{
@@ -272,64 +279,15 @@ void Update_TankBeam_Depend_On_Key(int key)
 
 void Draw_Object(void)
 {
-	if((Tank.pos[X] >= WINDOW_WIDTH))
-	{
-		Tank.pos[X] = Tank.pos_init[X];
-	}
-
-	if((Ufo.pos[Y] < 0))
-	{
-		Ufo.pos[Y] = Ufo.pos_init[Y];
-		Lcd_Draw_Bar(Ufo.pos_back[X], 0, Ufo.pos_back[X] + Ufo.size[X], 20, BG_COLOR);
-	}
-	if((Tank_beam.pos[Y] > WINDOW_HEIGHT - 1))
-	{
-		Tank_beam.beam_flag = NOT_FIRED;
-	}
-
-	if(Tank.move_flag != NOT_MOVED) // �̹����� ����������, ���ο� ���� �׸���, �� ���� ��ǥ�� ������.
-	{
-		Lcd_Draw_Bar(Tank.pos_back[X], Tank.pos_back[Y], Tank.pos_back[X] + Tank.size[X], Tank.pos_back[Y] + Tank.size[Y], BG_COLOR);
-		Lcd_Draw_Bar(Tank.pos[X], Tank.pos[Y], Tank.pos[X] + Tank.size[X], Tank.pos[Y] + Tank.size[Y], Tank.color);
-		Tank.move_flag = NOT_MOVED;
-	}
-	if(Ufo.move_flag != NOT_MOVED)
-	{
-		Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y], Ufo.pos_back[X] + Ufo.size[X], Ufo.pos_back[Y] + Ufo.size[Y], BG_COLOR);
-		Lcd_Draw_Bar(Ufo.pos[X], Ufo.pos[Y], Ufo.pos[X] + Ufo.size[X], Ufo.pos[Y] - Ufo.size[Y], Ufo.color);
-		Ufo.move_flag = NOT_MOVED;
-	}
-	if(Tank_beam.move_flag != NOT_MOVED)
-	{
-		Lcd_Draw_Bar(Tank_beam.pos_back[X], Tank_beam.pos_back[Y], Tank_beam.pos_back[X] + Tank_beam.size[X], Tank_beam.pos_back[Y] + Tank_beam.size[Y], BG_COLOR);
-		Lcd_Draw_Bar(Tank_beam.pos[X], Tank_beam.pos[Y], Tank_beam.pos[X] + Tank_beam.size[X], Tank_beam.pos[Y] + Tank_beam.size[Y], Tank_beam.color);
-		Tank_beam.move_flag = NOT_MOVED;
-	}
-	explosion();
-	if(Tank_beam.cd_flag == OBJECT_CRASHED)
-	{
-		Lcd_Draw_Bar(Tank_beam.pos[X],
-								 Tank_beam.pos[Y],
-								 Tank_beam.pos[X] + Tank_beam.size[X],
-								 Tank_beam.pos[Y] + Tank_beam.size[Y],
-								 BG_COLOR
-							 );
-		Tank_beam.cd_flag = OBJECT_NOT_CRASHED;
-		Tank_beam.beam_flag = NOT_FIRED;
-	}
-	if(Ufo.cd_flag == OBJECT_CRASHED)
-	{
-		Lcd_Draw_Bar(Ufo.pos[X], Ufo.pos[Y],
-								 Ufo.pos[X] + Ufo.size[X],
-								 Ufo.pos[Y] + Ufo.size[Y],
-								 BG_COLOR
-							 );
-			Ufo.cd_flag = OBJECT_NOT_CRASHED;
-			Ufo.pos[Y] = Ufo.pos_init[Y];
-	}
+	Draw_Tank();
+	Draw_Ufo();
+	Draw_Tank_Beam();
+	Check_Explosion();
+	Draw_Tank_Beam_Crashed();
+	Draw_Ufo_Crashed();
 }
 
-void explosion(void)
+void Check_Explosion(void)
 {
 	if(Tank_beam.cd_flag == OBJECT_CRASHED || Ufo.cd_flag == OBJECT_CRASHED)
 	{
@@ -340,5 +298,110 @@ void explosion(void)
 		Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], RED);
 		Timer4_Delay(100);
 		Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], BLACK);
+	}
+}
+
+
+void Draw_Tank(void)
+{
+	// draw tank - edge case
+	// if tank position exceed window width, then set to beginning
+	if((Tank.pos[X] >= WINDOW_WIDTH))
+	{
+		Tank.pos[X] = Tank.pos_init[X];
+	}
+	// draw tank
+	// if tank moved, then flag will be enabled. after enabled, updated.
+	if(Tank.move_flag != NOT_MOVED) // �̹����� ����������, ���ο� ���� �׸���, �� ���� ��ǥ�� ������.
+	{
+		// remove previous state in lcd
+		Lcd_Draw_Bar(Tank.pos_back[X], Tank.pos_back[Y], Tank.pos_back[X] + Tank.size[X], Tank.pos_back[Y] + Tank.size[Y], BG_COLOR);
+		// draw current state in lcd
+		Lcd_Draw_Bar(Tank.pos[X], Tank.pos[Y], Tank.pos[X] + Tank.size[X], Tank.pos[Y] + Tank.size[Y], Tank.color);
+		// set to tank flag not moved.
+		Tank.move_flag = NOT_MOVED;
+	}
+}
+
+
+void Draw_Ufo(void)
+{
+	// draw ufo - edge case
+	// if ufo position off from the window, then set to beginning
+	if((Ufo.pos[Y] < 0))
+	{
+		Ufo.pos[Y] = Ufo.pos_init[Y];
+		Lcd_Draw_Bar(Ufo.pos_back[X], 0, Ufo.pos_back[X] + Ufo.size[X], 20, BG_COLOR);
+	}
+
+
+	// draw Ufo
+	// if tank moved, then flag will be enabled. after enabled, updated.
+	if(Ufo.move_flag != NOT_MOVED)
+	{
+		// remove previous state in lcd
+		Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y], Ufo.pos_back[X] + Ufo.size[X], Ufo.pos_back[Y] + Ufo.size[Y], BG_COLOR);
+		// draw current state in lcd
+		Lcd_Draw_Bar(Ufo.pos[X], Ufo.pos[Y], Ufo.pos[X] + Ufo.size[X], Ufo.pos[Y] - Ufo.size[Y], Ufo.color);
+		// set to ufo flag not moved.
+		Ufo.move_flag = NOT_MOVED;
+	}
+}
+
+void Draw_Tank_Beam()
+{
+	// draw tank beam - edge case
+	// if fired beam off from the window, then set the tank beam member flag as not fired.
+	if((Tank_beam.pos[Y] > WINDOW_HEIGHT - 1))
+	{
+		Tank_beam.beam_flag = NOT_FIRED;
+	}
+
+	// draw tank beam
+	// if tank beam moved, then flag will be enabled. after enabled, updated.
+	if(Tank_beam.move_flag != NOT_MOVED)
+	{
+		// remove previous state in lcd
+		Lcd_Draw_Bar(Tank_beam.pos_back[X], Tank_beam.pos_back[Y], Tank_beam.pos_back[X] + Tank_beam.size[X], Tank_beam.pos_back[Y] + Tank_beam.size[Y], BG_COLOR);
+		// draw current state in lcd
+		Lcd_Draw_Bar(Tank_beam.pos[X], Tank_beam.pos[Y], Tank_beam.pos[X] + Tank_beam.size[X], Tank_beam.pos[Y] + Tank_beam.size[Y], Tank_beam.color);
+		// set to tank beam flag not moved.
+		Tank_beam.move_flag = NOT_MOVED;
+	}
+}
+
+void Draw_Tank_Beam_Crashed(void)
+{
+	// draw tank beam object when crashed.
+	if(Tank_beam.cd_flag == OBJECT_CRASHED)
+	{
+		// remove tank beam object, set color to black.
+		Lcd_Draw_Bar(Tank_beam.pos[X],
+								 Tank_beam.pos[Y],
+								 Tank_beam.pos[X] + Tank_beam.size[X],
+								 Tank_beam.pos[Y] + Tank_beam.size[Y],
+								 BG_COLOR
+							 );
+		// reverse state
+		Tank_beam.cd_flag = OBJECT_NOT_CRASHED;
+		// set tank beam as not fired
+		Tank_beam.beam_flag = NOT_FIRED;
+	}
+}
+void Draw_Ufo_Crashed(void)
+{
+	// draw ufo object when crashed.
+	if(Ufo.cd_flag == OBJECT_CRASHED)
+	{
+		// remove ufo object, set color to black.
+		Lcd_Draw_Bar(Ufo.pos[X], Ufo.pos[Y],
+								 Ufo.pos[X] + Ufo.size[X],
+								 Ufo.pos[Y] + Ufo.size[Y],
+								 BG_COLOR
+							 );
+		  // reverse state
+			Ufo.cd_flag = OBJECT_NOT_CRASHED;
+			// set ufo position to beginning.
+			Ufo.pos[Y] = Ufo.pos_init[Y];
 	}
 }
