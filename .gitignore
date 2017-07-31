@@ -2,3 +2,4 @@ dram_0x30000000.*
 dram_0x30000000.axf
 dram_0x30000000.bin
 dram_0x30000000.map
+*.o
