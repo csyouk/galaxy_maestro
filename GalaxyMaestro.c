@@ -66,8 +66,8 @@ struct Object
 	int move_step;		  // 이미지를 얼마나 이동시킬 것인가?
 	int beam_flag;		  // beam 발사 됐는지 여부 flag
 	int cd_flag;		  // collision detection flag
-  int dir[X_COMMA_Y];           // x,y 방향의 방향정보. 1과 -1 값이 있다.
-  int missile_dir;      // 1,2,3,4번 키를 누름에 따라 미사일의 방향이 정해진다. 차례대로, up, left, down, right
+	int dir[X_COMMA_Y];           // x,y 방향의 방향정보. 1과 -1 값이 있다.
+	int missile_dir;      // 1,2,3,4번 키를 누름에 따라 미사일의 방향이 정해진다. 차례대로, up, left, down, right
 };
 
 /* 5:5:5:I Color Definition */
@@ -158,27 +158,25 @@ void Update_Object(void)
 	int key = DEFAULT;
 	if(Timer0_Check_Expired())
 	{
-
+		// DO NOT CHANGE PROCEDURE ORDER!!!!
 		key = Key_Get_Pressed();
 		Update_Ufo();
 		Update_Tank_Depend_On_Key(key);
 		Update_TankBeam(key);
-
-		//		Uart_Printf("Tank.timer %d / Tank.speed_step %d\n", Tank.timer, Tank.speed_step);
 	}
 }
 
 
 void collision_detect(void)
 {
-	if(Tank_beam.beam_flag != NOT_FIRED && Tank_beam.cd_flag == OBJECT_NOT_CRASHED)
+	if(Tank_beam.beam_flag != NOT_FIRED &&
+	   Tank_beam.cd_flag == OBJECT_NOT_CRASHED)
 	{
 		if((Tank_beam.pos[X] > Ufo.pos[X]) && \
 		(Tank_beam.pos[X] + Tank_beam.size[X] < Ufo.pos[X] + Ufo.size[X]) )
 		{
 			if((Tank_beam.pos[Y] + Tank_beam.size[Y]  >= Ufo.pos[Y]))
 			{
-
 				Tank_beam.move_flag = MOVED;
 				Ufo.move_flag = MOVED;
 
@@ -271,13 +269,15 @@ void Update_TankBeam(int key)
 	}
 }
 
-/* ============================================
+/*
+* ============================================
 * draw objects.
 * ============================================
 */
 
 void Draw_Object(void)
 {
+	// DO NOT CHANGE PROCEDURE ORDER!!!!
 	Draw_Tank();
 	Draw_Ufo();
 	Draw_Tank_Beam();
