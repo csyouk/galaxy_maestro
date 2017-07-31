@@ -55,20 +55,19 @@ void Draw_Ufo_Crashed(void);
 
 struct Object
 {
-	int timer;     	 	  // ���� Ÿ�̸Ӹ� �� ������?
-	int move_flag;   	  // �����̰� �ִ� �������� �ƴ���,
+	int timer;     	 	  // 몇번 타이머를 쓸 것인지?
+	int move_flag;   	  // 움직이고 있는 상태인지 아니지,
 	int pos[X_COMMA_Y]; 		  // x,y
-	int pos_init[X_COMMA_Y];  	  // �ʱ� ��ǥ.
-	int pos_back[X_COMMA_Y];      // ���� ��ǥ�� ����. �̹����� ������ ��, �� ��ǥ�� ������ ������ �̹����� ��������.
-	int size[X_COMMA_Y];	      // WINDOW_WIDTH, WINDOW_HEIGHT
-
-	unsigned short color; // ���߿� �̹����� ��ü.
-	int speed_step;	 	  // �̹����� �󸶳� ���� �̵��ǰ� �� ������.
-	int move_step;		  // �̹����� �󸶳� �̵���ų ���ΰ�?
-	int beam_flag;		  // beam �߻� �ƴ��� ���� flag
+	int pos_init[X_COMMA_Y];  	  // 초기 좌표.
+	int pos_back[X_COMMA_Y];      // 이전 좌표의 정보. 이미지를 사용할 시, 이 좌표를 토대로 이전의 이미지를 지워야함.
+	int size[X_COMMA_Y];	      // width, height
+	unsigned short color; // 나중에 이미지로 대체.
+	int speed_step;	 	  // 이미지가 얼마나 빨리 이동되게 할 것인지.
+	int move_step;		  // 이미지를 얼마나 이동시킬 것인가?
+	int beam_flag;		  // beam 발사 됐는지 여부 flag
 	int cd_flag;		  // collision detection flag
-	int dir[X_COMMA_Y];           // x,y ������ ��������. 1�� -1 ���� �ִ�.
-	int missile_dir;      // 1,2,3,4 Ű �Է°��� ���Ⱚ���� �����Ѵ�. �� ���� �̻����� ������ �����ϴ�.
+  int dir[X_COMMA_Y];           // x,y 방향의 방향정보. 1과 -1 값이 있다.
+  int missile_dir;      // 1,2,3,4번 키를 누름에 따라 미사일의 방향이 정해진다. 차례대로, up, left, down, right
 };
 
 /* 5:5:5:I Color Definition */
@@ -151,7 +150,7 @@ void Galaxy_Maestro(void)
 
 
 /* ============================================
-* �� ������ ��ü�� ����(������ ���� ��)�� ���õ� �ڵ带 �ۼ��Ѵ�..
+* 객체들의 상태 정보를 업데이트 시킨다.
 * ============================================
 */
 void Update_Object(void)
@@ -208,7 +207,7 @@ void Update_Ufo(void)
 
 void Update_Tank_Depend_On_Key(int key)
 {
-	// �Է��� ���� 1~4������ �޴´�.
+	// only key input 1~4 can pass.
 	if(key < UP || key > RIGHT) return;
 	// ��ũ�� ���� ������.
 	if(key == UP)
@@ -273,7 +272,7 @@ void Update_TankBeam(int key)
 }
 
 /* ============================================
-* �� ������ ȭ���� �׸��� ���� ���õ� �ڵ带 �ۼ��Ѵ�.
+* draw objects.
 * ============================================
 */
 
@@ -399,9 +398,9 @@ void Draw_Ufo_Crashed(void)
 								 Ufo.pos[Y] + Ufo.size[Y],
 								 BG_COLOR
 							 );
-		  // reverse state
-			Ufo.cd_flag = OBJECT_NOT_CRASHED;
-			// set ufo position to beginning.
-			Ufo.pos[Y] = Ufo.pos_init[Y];
+		// reverse state
+		Ufo.cd_flag = OBJECT_NOT_CRASHED;
+		// set ufo position to beginning.
+		Ufo.pos[Y] = Ufo.pos_init[Y];
 	}
 }
