@@ -44,7 +44,7 @@ enum Color{
 
 struct Object Tank = {0,1,{0,10},{0,10},{0,10},{30,10},
 					RED, 4, 8, 0, 0, {1,1}, 1};
-struct Object Gun = {0,1,{160,300},{160,300},{160,300},{30,30},
+struct Object Ufo = {0,1,{160,300},{160,300},{160,300},{30,30},
 					BLUE, 4, 7, 0, 0, {1,1}};
 struct Object Tank_beam = {0,1,{319,239},{319,239},{319,239},{10,10},
 					GREEN, 3, 10, 0, 0, {1,1}};
@@ -83,19 +83,19 @@ void Move_Object(void)
 	int key = 0;
 	if(Timer0_Check_Expired())
 	{
-		Gun.timer++;
+		Ufo.timer++;
 		Tank_beam.timer++;
 
 		key = Key_Get_Pressed();
 		Move_Tank_Depend_On_Key(key);
 
 
-		if(Gun.timer >= Gun.speed_step)
+		if(Ufo.timer >= Ufo.speed_step)
 		{
-			Gun.timer = 0;
-			Gun.pos_back[1] = Gun.pos[1];
-			Gun.pos[1] = Gun.pos[1] - Gun.move_step;
-			Gun.move_flag = 1;
+			Ufo.timer = 0;
+			Ufo.pos_back[1] = Ufo.pos[1];
+			Ufo.pos[1] = Ufo.pos[1] - Ufo.move_step;
+			Ufo.move_flag = 1;
 		}
 		if(key == 5)
 		{
@@ -130,20 +130,20 @@ void collision_detect(void)
 {
 	if(Tank_beam.beam_flag != 0 && Tank_beam.cd_flag == 0)
 	{
-		if((Tank_beam.pos[0] > Gun.pos[0]) && \
-		   (Tank_beam.pos[0] + Tank_beam.size[0] < Gun.pos[0] + Gun.size[0]) )
+		if((Tank_beam.pos[0] > Ufo.pos[0]) && \
+		   (Tank_beam.pos[0] + Tank_beam.size[0] < Ufo.pos[0] + Ufo.size[0]) )
 		{
-			if((Tank_beam.pos[1] + Tank_beam.size[1]  >= Gun.pos[1]))
+			if((Tank_beam.pos[1] + Tank_beam.size[1]  >= Ufo.pos[1]))
 			{
 
 				Tank_beam.move_flag = 1;
-				Gun.move_flag = 1;
+				Ufo.move_flag = 1;
 
-				Gun.timer = 0;
+				Ufo.timer = 0;
 				Tank_beam.timer = 0;
 
 				Tank_beam.cd_flag = 1;
-				Gun.cd_flag = 1;
+				Ufo.cd_flag = 1;
 			}
 		}
 	}
@@ -200,10 +200,10 @@ void Draw_Object(void)
 		Tank.pos[0] = Tank.pos_init[0];
 	}
 
-	if((Gun.pos[1] < 0))
+	if((Ufo.pos[1] < 0))
 	{
-		Gun.pos[1] = Gun.pos_init[1];
-		Lcd_Draw_Bar(Gun.pos_back[0], 0, Gun.pos_back[0] + Gun.size[0], 20, BACK_COLOR);
+		Ufo.pos[1] = Ufo.pos_init[1];
+		Lcd_Draw_Bar(Ufo.pos_back[0], 0, Ufo.pos_back[0] + Ufo.size[0], 20, BACK_COLOR);
 	}
 	if((Tank_beam.pos[1] > 239))
 	{
@@ -216,11 +216,11 @@ void Draw_Object(void)
 		Lcd_Draw_Bar(Tank.pos[0], Tank.pos[1], Tank.pos[0] + Tank.size[0], Tank.pos[1] + Tank.size[1], Tank.color);
 		Tank.move_flag = 0;
 	}
-	if(Gun.move_flag != 0)
+	if(Ufo.move_flag != 0)
 	{
-		Lcd_Draw_Bar(Gun.pos_back[0], Gun.pos_back[1], Gun.pos_back[0] + Gun.size[0], Gun.pos_back[1] + Gun.size[1], BACK_COLOR);
-		Lcd_Draw_Bar(Gun.pos[0], Gun.pos[1], Gun.pos[0] + Gun.size[0], Gun.pos[1] - Gun.size[1], Gun.color);
-		Gun.move_flag = 0;
+		Lcd_Draw_Bar(Ufo.pos_back[0], Ufo.pos_back[1], Ufo.pos_back[0] + Ufo.size[0], Ufo.pos_back[1] + Ufo.size[1], BACK_COLOR);
+		Lcd_Draw_Bar(Ufo.pos[0], Ufo.pos[1], Ufo.pos[0] + Ufo.size[0], Ufo.pos[1] - Ufo.size[1], Ufo.color);
+		Ufo.move_flag = 0;
 	}
 	if(Tank_beam.move_flag != 0)
 	{
@@ -235,27 +235,27 @@ void Draw_Object(void)
 		Tank_beam.cd_flag = 0;
 		Tank_beam.beam_flag = 0;
 	}
-	if(Gun.cd_flag == 1)
+	if(Ufo.cd_flag == 1)
 	{
-		Lcd_Draw_Bar(Gun.pos[0], Gun.pos[1],
-				Gun.pos[0] + Gun.size[0],
-				Gun.pos[1] + Gun.size[1],
+		Lcd_Draw_Bar(Ufo.pos[0], Ufo.pos[1],
+				Ufo.pos[0] + Ufo.size[0],
+				Ufo.pos[1] + Ufo.size[1],
 				BACK_COLOR);
-		Gun.cd_flag = 0;
-		Gun.pos[1] = Gun.pos_init[1];
+		Ufo.cd_flag = 0;
+		Ufo.pos[1] = Ufo.pos_init[1];
 	}
 }
 
 void explosion(void)
 {
-	if(Tank_beam.cd_flag == 1 || Gun.cd_flag == 1)
+	if(Tank_beam.cd_flag == 1 || Ufo.cd_flag == 1)
 	{
-		Lcd_Draw_Bar(Gun.pos_back[0], Gun.pos_back[1]-40, Gun.pos_back[0] + 30, Gun.pos_back[1], WHITE);
+		Lcd_Draw_Bar(Ufo.pos_back[0], Ufo.pos_back[1]-40, Ufo.pos_back[0] + 30, Ufo.pos_back[1], WHITE);
 		Timer4_Delay(100);
-		Lcd_Draw_Bar(Gun.pos_back[0], Gun.pos_back[1]-40, Gun.pos_back[0] + 30, Gun.pos_back[1], BLUE);
+		Lcd_Draw_Bar(Ufo.pos_back[0], Ufo.pos_back[1]-40, Ufo.pos_back[0] + 30, Ufo.pos_back[1], BLUE);
 		Timer4_Delay(100);
-		Lcd_Draw_Bar(Gun.pos_back[0], Gun.pos_back[1]-40, Gun.pos_back[0] + 30, Gun.pos_back[1], RED);
+		Lcd_Draw_Bar(Ufo.pos_back[0], Ufo.pos_back[1]-40, Ufo.pos_back[0] + 30, Ufo.pos_back[1], RED);
 		Timer4_Delay(100);
-		Lcd_Draw_Bar(Gun.pos_back[0], Gun.pos_back[1]-40, Gun.pos_back[0] + 30, Gun.pos_back[1], BLACK);
+		Lcd_Draw_Bar(Ufo.pos_back[0], Ufo.pos_back[1]-40, Ufo.pos_back[0] + 30, Ufo.pos_back[1], BLACK);
 	}
 }
