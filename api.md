@@ -19,11 +19,11 @@
 - void Lcd_Draw_Hline(int y, int x1, int x2, int color)
 
 ## BMP 이미지
-- void Lcd_Get_Info_BMP(int * x, int  * y, const unsigned short int *fp)
-- void Lcd_Draw_BMP(int x, int y, const unsigned short int *fp)
+- void Lcd_Get_Info_BMP(int * x, int  * y, const unsigned short int \*fp)
+- void Lcd_Draw_BMP(int x, int y, const unsigned short int \*fp)
 
 ## 문자
-- void Lcd_Puts(int x, int y, int color, int bkcolor, char *str, int zx, int zy)
+- void Lcd_Puts(int x, int y, int color, int bkcolor, char \*str, int zx, int zy)
   - 원하는 위치 x,y에 원하는 색(color)으로 문자열 인쇄.
 
 ## 키 스위치(단일 키 입력)
@@ -60,3 +60,24 @@
   - 타이머 0을 세우지 않고, 주기만 바꿔줌.
   - 주기는 인자로 넘기는  signed int이다.
   - 단위는 msec
+
+
+
+---------------------------------------------------------------
+# Code
+```cpp
+struct Object
+{
+	int timer;     	 	  // 몇번 타이머를 쓸 것인지?
+	int move_flag;   	  // 움직이고 있는 상태인지 아니지,
+	int pos[2]; 		  // x,y
+	int pos_init[2];  	  // 초기 좌표.
+	int pos_back[2];      // 이전 좌표의 정보. 이미지를 사용할 시, 이 좌표를 토대로 이전의 이미지를 지워야함.
+	int size[2];	      // width, height
+	unsigned short color; // 나중에 이미지로 대체.
+	int speed_step;	 	  // 이미지가 얼마나 빨리 이동되게 할 것인지.
+	int move_step;		  // 이미지를 얼마나 이동시킬 것인가?
+	int beam_flag;		  // beam 발사 됐는지 여부 flag
+	int cd_flag;		  // collision detection flag
+};
+```
