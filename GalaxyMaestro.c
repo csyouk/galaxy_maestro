@@ -12,6 +12,7 @@ void Move_Object(void);
 void collision_detect(void);
 void Draw_Object(void);
 void Galaxy_Maestro(void);
+void Move_Tank_Depend_On_Key(int);
 
 struct Object
 {
@@ -72,20 +73,11 @@ void Galaxy_Maestro(void)
 
 
 
-void explosion(void)
-{
-	if(Tank_beam.cd_flag == 1 || Gun.cd_flag == 1)
-	{
-		Lcd_Draw_Bar(Gun.pos_back[0], Gun.pos_back[1]-40, Gun.pos_back[0] + 30, Gun.pos_back[1], WHITE);
-		Timer4_Delay(100);
-		Lcd_Draw_Bar(Gun.pos_back[0], Gun.pos_back[1]-40, Gun.pos_back[0] + 30, Gun.pos_back[1], BLUE);
-		Timer4_Delay(100);
-		Lcd_Draw_Bar(Gun.pos_back[0], Gun.pos_back[1]-40, Gun.pos_back[0] + 30, Gun.pos_back[1], RED);
-		Timer4_Delay(100);
-		Lcd_Draw_Bar(Gun.pos_back[0], Gun.pos_back[1]-40, Gun.pos_back[0] + 30, Gun.pos_back[1], BLACK);
-	}
-}
 
+/* ============================================
+ * 이 곳에는 객체의 행위(멤버값 갱신 등)와 관련된 코드를 작성한다..
+ * ============================================
+*/
 void Move_Object(void)
 {
 	int key = 0;
@@ -95,36 +87,8 @@ void Move_Object(void)
 		Tank_beam.timer++;
 
 		key = Key_Get_Pressed();
+		Move_Tank_Depend_On_Key(key);
 
-		// 탱크를 위로 움직임.
-		if(key == 1)
-		{
-			Tank.pos_back[1] = Tank.pos[1];			 // 현재의 위치를 벡업해 놓는다.
-			Tank.pos[1] = Tank.pos[1] - Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
-			Tank.move_flag = 1;						 //
-		}
-		// 탱크를 좌측으로 움직임.
-		if(key == 2)
-		{
-			Tank.pos_back[0] = Tank.pos[0];			 // 현재의 위치를 벡업해 놓는다.
-			Tank.pos[0] = Tank.pos[0] - Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
-			Tank.move_flag = 1;						 //
-		}
-		// 탱크를 위로 움직임.
-		if(key == 3)
-		{
-			Tank.pos_back[1] = Tank.pos[1];			 // 현재의 위치를 벡업해 놓는다.
-			Tank.pos[1] = Tank.pos[1] + Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
-			Tank.move_flag = 1;						 //
-		}
-		// 탱크를 우측으로 움직임.
-		if(key == 4)
-		{
-
-			Tank.pos_back[0] = Tank.pos[0];			 // 현재의 위치를 벡업해 놓는다.
-			Tank.pos[0] = Tank.pos[0] + Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
-			Tank.move_flag = 1;						 //
-		}
 
 		if(Gun.timer >= Gun.speed_step)
 		{
@@ -160,6 +124,74 @@ void Move_Object(void)
 //		Uart_Printf("Tank.timer %d / Tank.speed_step %d\n", Tank.timer, Tank.speed_step);
 	}
 }
+
+
+void collision_detect(void)
+{
+	if(Tank_beam.beam_flag != 0 && Tank_beam.cd_flag == 0)
+	{
+		if((Tank_beam.pos[0] > Gun.pos[0]) && \
+		   (Tank_beam.pos[0] + Tank_beam.size[0] < Gun.pos[0] + Gun.size[0]) )
+		{
+			if((Tank_beam.pos[1] + Tank_beam.size[1]  >= Gun.pos[1]))
+			{
+
+				Tank_beam.move_flag = 1;
+				Gun.move_flag = 1;
+
+				Gun.timer = 0;
+				Tank_beam.timer = 0;
+
+				Tank_beam.cd_flag = 1;
+				Gun.cd_flag = 1;
+			}
+		}
+	}
+}
+
+
+void Move_Tank_Depend_On_Key(int key)
+{
+	// 입력은 오직 1~4까지만 받는다.
+	if(key < 1 || key > 4) return;
+	// 탱크를 위로 움직임.
+	if(key == 1)
+	{
+		Tank.pos_back[1] = Tank.pos[1];			 // 현재의 위치를 벡업해 놓는다.
+		Tank.pos[1] = Tank.pos[1] - Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
+		Tank.move_flag = 1;						 //
+	}
+	// 탱크를 좌측으로 움직임.
+	if(key == 2)
+	{
+		Tank.pos_back[0] = Tank.pos[0];			 // 현재의 위치를 벡업해 놓는다.
+		Tank.pos[0] = Tank.pos[0] - Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
+		Tank.move_flag = 1;						 //
+	}
+	// 탱크를 위로 움직임.
+	if(key == 3)
+	{
+		Tank.pos_back[1] = Tank.pos[1];			 // 현재의 위치를 벡업해 놓는다.
+		Tank.pos[1] = Tank.pos[1] + Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
+		Tank.move_flag = 1;						 //
+	}
+	// 탱크를 우측으로 움직임.
+	if(key == 4)
+	{
+
+		Tank.pos_back[0] = Tank.pos[0];			 // 현재의 위치를 벡업해 놓는다.
+		Tank.pos[0] = Tank.pos[0] + Tank.move_step; // move_step 이미지를 얼마나 이동시킬 것인가?
+		Tank.move_flag = 1;						 //
+	}
+}
+
+
+
+
+/* ============================================
+ * 이 곳에는 화면을 그리는 곳과 관련된 코드를 작성한다.
+ * ============================================
+*/
 
 void Draw_Object(void)
 {
@@ -214,26 +246,16 @@ void Draw_Object(void)
 	}
 }
 
-void collision_detect(void)
+void explosion(void)
 {
-	if(Tank_beam.beam_flag != 0 && Tank_beam.cd_flag == 0)
+	if(Tank_beam.cd_flag == 1 || Gun.cd_flag == 1)
 	{
-		if((Tank_beam.pos[0] > Gun.pos[0]) && \
-		   (Tank_beam.pos[0] + Tank_beam.size[0] < Gun.pos[0] + Gun.size[0]) )
-		{
-			if((Tank_beam.pos[1] + Tank_beam.size[1]  >= Gun.pos[1]))
-			{
-
-				Tank_beam.move_flag = 1;
-				Gun.move_flag = 1;
-
-				Gun.timer = 0;
-				Tank_beam.timer = 0;
-
-				Tank_beam.cd_flag = 1;
-				Gun.cd_flag = 1;
-			}
-		}
+		Lcd_Draw_Bar(Gun.pos_back[0], Gun.pos_back[1]-40, Gun.pos_back[0] + 30, Gun.pos_back[1], WHITE);
+		Timer4_Delay(100);
+		Lcd_Draw_Bar(Gun.pos_back[0], Gun.pos_back[1]-40, Gun.pos_back[0] + 30, Gun.pos_back[1], BLUE);
+		Timer4_Delay(100);
+		Lcd_Draw_Bar(Gun.pos_back[0], Gun.pos_back[1]-40, Gun.pos_back[0] + 30, Gun.pos_back[1], RED);
+		Timer4_Delay(100);
+		Lcd_Draw_Bar(Gun.pos_back[0], Gun.pos_back[1]-40, Gun.pos_back[0] + 30, Gun.pos_back[1], BLACK);
 	}
-
 }
