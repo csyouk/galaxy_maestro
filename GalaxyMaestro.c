@@ -44,9 +44,9 @@ void Update_Object(void);
 void collision_detect(void);
 void Draw_Object(void);
 void Galaxy_Maestro(void);
-void Update_Tank_Members_Depend_On_Key(int);
-void Update_Ufo_Members(void);
-void Update_TankBeam_Members_Depend_On_Key(int);
+void Update_Tank_Depend_On_Key(int);
+void Update_Ufo(void);
+void Update_TankBeam_Depend_On_Key(int);
 
 struct Object
 {
@@ -155,11 +155,10 @@ void Update_Object(void)
 	if(Timer0_Check_Expired())
 	{
 
-		Tank_beam.timer++;
 		key = Key_Get_Pressed();
-		Update_Ufo_Members();
-		Update_Tank_Members_Depend_On_Key(key);
-		Update_TankBeam_Members_Depend_On_Key(key);
+		Update_Ufo();
+		Update_Tank_Depend_On_Key(key);
+		Update_TankBeam_Depend_On_Key(key);
 
 		//		Uart_Printf("Tank.timer %d / Tank.speed_step %d\n", Tank.timer, Tank.speed_step);
 	}
@@ -189,7 +188,7 @@ void collision_detect(void)
 	}
 }
 
-void Update_Ufo_Members(void)
+void Update_Ufo(void)
 {
 	Ufo.timer++;
 	if(Ufo.timer >= Ufo.speed_step)
@@ -202,7 +201,7 @@ void Update_Ufo_Members(void)
 }
 
 
-void Update_Tank_Members_Depend_On_Key(int key)
+void Update_Tank_Depend_On_Key(int key)
 {
 	// �Է��� ���� 1~4������ �޴´�.
 	if(key < UP || key > RIGHT) return;
@@ -238,8 +237,9 @@ void Update_Tank_Members_Depend_On_Key(int key)
 }
 
 
-void Update_TankBeam_Members_Depend_On_Key(int key)
+void Update_TankBeam_Depend_On_Key(int key)
 {
+	Tank_beam.timer++;
 	if(key == FIRE)
 	{
 		if(Tank_beam.beam_flag == NOT_FIRED)
