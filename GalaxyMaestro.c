@@ -22,18 +22,21 @@
 #define OBJECT_NOT_CRASHED 0
 #define OBJECT_CRASHED 1
 
+
+
 /*
 terms about window edges
-|-------1-----|
+ ||       || ||
+|------1------|
 |             |
 2             4
 |             |
-|-------3-----|
+|------3------|
 
-line 1 : W_
-line 2 : W_
-line 3 : W_
-line 4 : W_
+line 1 : W_X_MIN
+line 2 : W_Y_MIN
+line 3 : W_X_MAX
+line 4 : W_Y_MAX
 
 */
 
@@ -44,7 +47,7 @@ void Update_Object(void);
 void collision_detect(void);
 void Draw_Object(void);
 void Galaxy_Maestro(void);
-void Update_Tank_Depend_On_Key(int);
+void Update_Tank(int);
 void Update_Ufo(void);
 void Update_TankBeam(int);
 void Draw_Tank(void);
@@ -80,21 +83,44 @@ enum Color{
 	RED=0xf800
 };
 
+enum WINDOW{
+ W_X_MIN=0,
+ W_X_MAX=320,
+ W_Y_MIN=0,
+ W_Y_MAX=240
+};
+
+enum TANK_DATA{
+	POS_INIT_X=0,
+	POS_INIT_Y=10,
+	TANK_WIDTH=15,
+	TANK_HEIGHT=10,
+	TANK_SPEED_RATE=4,
+	TANK_FOOTSTEP=8,
+};
+int speed_step;	 	  // 이미지가 얼마나 빨리 이동되게 할 것인지.
+int move_step;		  // 이미지를 얼마나 이동시킬 것인가?
+int beam_flag;		  // beam 발사 됐는지 여부 flag
+int cd_flag;		  // collision detection flag
+int dir[X_COMMA_Y];           // x,y 방향의 방향정보. 1과 -1 값이 있다.
+int missile_dir;      // 1,2,3,4번 키를 누름에 따라 미사일의 방향이 정해진다. 차례대로, up, left, down, right
+
 struct Object Tank = {
 	0,
 	1,
-	{0,10},
-	{0,10},
-	{0,10},
-	{30,10},
+	{0,10},  // 현재 탱크 위치.
+	{POS_INIT_X,POS_INIT_Y},  // 초기화시킬 시 탱크 위치.
+	{0,10},  // 탱크의 위치가 움직이게 될 때, 탱크의 위치를 벡업.
+	{TANK_WIDTH,TANK_HEIGHT}, // 탱크의 크기. 가로 15, 세로 10
 	RED,
-	4,
-	8,
+	TANK_SPEED_RATE,
+	TANK_FOOTSTEP,
 	0,
 	0,
 	{1,1},
 	1
 };
+
 struct Object Ufo = {
 	0,
 	1,
@@ -161,7 +187,7 @@ void Update_Object(void)
 		// DO NOT CHANGE PROCEDURE ORDER!!!!
 		key = Key_Get_Pressed();
 		Update_Ufo();
-		Update_Tank_Depend_On_Key(key);
+		Update_Tank(key);
 		Update_TankBeam(key);
 	}
 }
@@ -203,7 +229,7 @@ void Update_Ufo(void)
 }
 
 
-void Update_Tank_Depend_On_Key(int key)
+void Update_Tank(int key)
 {
 	// only key input 1~4 can pass.
 	if(key < UP || key > RIGHT) return;
@@ -224,16 +250,16 @@ void Update_Tank_Depend_On_Key(int key)
 	// ��ũ�� ���� ������.
 	if(key == DOWN)
 	{
-		Tank.pos_back[Y] = Tank.pos[Y];			 // ������ ��ġ�� ������ ���´�.
-		Tank.pos[Y] = Tank.pos[Y] + Tank.move_step; // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
+		Tank.pos_back[Y] = Tank.pos[Y];			     // ������ ��ġ�� ������ ���´�.
+		Tank.pos[Y] = Tank.pos[Y] + Tank.move_step;  // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
 		Tank.move_flag = MOVED;						 //
 	}
 	// ��ũ�� �������� ������.
 	if(key == RIGHT)
 	{
 
-		Tank.pos_back[X] = Tank.pos[X];			 // ������ ��ġ�� ������ ���´�.
-		Tank.pos[X] = Tank.pos[X] + Tank.move_step; // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
+		Tank.pos_back[X] = Tank.pos[X];			     // ������ ��ġ�� ������ ���´�.
+		Tank.pos[X] = Tank.pos[X] + Tank.move_step;  // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
 		Tank.move_flag = MOVED;						 //
 	}
 }
@@ -253,8 +279,8 @@ void Update_TankBeam(int key)
 	}
 	if(Tank_beam.beam_flag == NOT_FIRED)
 	{
-		Tank_beam.pos_init[X] = Tank.pos[X] + 13;
-		Tank_beam.pos_init[Y] = Tank.pos[Y] + 12;
+		Tank_beam.pos_init[X] = Tank.pos[X] + TANK_WIDTH/2;
+		Tank_beam.pos_init[Y] = Tank.pos[Y] + 2*TANK_HEIGHT;
 		Tank_beam.pos_back[X] = Tank_beam.pos_init[X];
 		Tank_beam.pos_back[Y] = Tank_beam.pos_init[Y];
 		Tank_beam.pos[X] = Tank_beam.pos_init[X];
@@ -303,11 +329,23 @@ void Check_Explosion(void)
 
 void Draw_Tank(void)
 {
-	// draw tank - edge case
-	// if tank position exceed window width, then set to beginning
-	if((Tank.pos[X] >= WINDOW_WIDTH))
+	// draw tank - edge cases
+	// if tank position exceed window then block
+	if(Tank.pos[X] > WINDOW_WIDTH - TANK_WIDTH)
 	{
-		Tank.pos[X] = Tank.pos_init[X];
+		Tank.pos[X] = Tank.pos_back[X];
+	}
+	if(Tank.pos[X] < W_X_MIN)
+	{
+		Tank.pos[X] = Tank.pos_back[X];
+	}
+	if(Tank.pos[Y] > WINDOW_HEIGHT - TANK_HEIGHT){
+		Uart_Printf("exceed height case, check y : %d\n",Tank.pos[Y]);
+		Tank.pos[Y] = Tank.pos_back[Y];
+	}
+	if(Tank.pos[Y] < W_Y_MIN){
+		Uart_Printf("less than ground case, check y : %d\n",Tank.pos[Y]);
+		Tank.pos[Y] = Tank.pos_back[Y];
 	}
 	// draw tank
 	// if tank moved, then flag will be enabled. after enabled, updated.
@@ -327,11 +365,12 @@ void Draw_Ufo(void)
 {
 	// draw ufo - edge case
 	// if ufo position off from the window, then set to beginning
-	if((Ufo.pos[Y] < 0))
+	if((Ufo.pos[Y] < W_Y_MIN))
 	{
 		Ufo.pos[Y] = Ufo.pos_init[Y];
 		Lcd_Draw_Bar(Ufo.pos_back[X], 0, Ufo.pos_back[X] + Ufo.size[X], 20, BG_COLOR);
 	}
+
 
 
 	// draw Ufo
