@@ -2,37 +2,68 @@
 #include "2440addr.h"
 #include <stdlib.h>
 
-#define BACK_COLOR 	BLACK
-#define WIDTH 		320
-#define HEIGHT 		240
+#define BG_COLOR 	BLACK
+#define WINDOW_WIDTH 		320
+#define WINDOW_HEIGHT 		240
 #define X 0
 #define Y 1
-#define X_AND_Y 2
+#define X_COMMA_Y 2
+#define DEFAULT 0
+#define UP 1
+#define LEFT 2
+#define DOWN 3
+#define RIGHT 4
+#define FIRE 5
+#define NOT_FIRED 0
+#define FIRED 1
+#define ZERO 0
+#define NOT_MOVED 0
+#define MOVED 1
+#define OBJECT_NOT_CRASHED 0
+#define OBJECT_CRASHED 1
+
+/*
+terms about window edges
+|-------1-----|
+|             |
+2             4
+|             |
+|-------3-----|
+
+line 1 : W_
+line 2 : W_
+line 3 : W_
+line 4 : W_
+
+*/
+
 
 void Game_Init(void);
 void explosion(void);
-void Move_Object(void);
+void Update_Object(void);
 void collision_detect(void);
 void Draw_Object(void);
 void Galaxy_Maestro(void);
-void Move_Tank_Depend_On_Key(int);
+void Update_Tank_Members_Depend_On_Key(int);
+void Update_Ufo_Members(void);
+void Update_TankBeam_Members_Depend_On_Key(int);
 
 struct Object
 {
-	int timer;     	 	  // ¸î¹ø Å¸ÀÌ¸Ó¸¦ ¾µ °ÍÀÎÁö?
-	int move_flag;   	  // ¿òÁ÷ÀÌ°í ÀÖ´Â »óÅÂÀÎÁö ¾Æ´ÏÁö,
-	int pos[X_AND_Y]; 		  // x,y
-	int pos_init[X_AND_Y];  	  // ÃÊ±â ÁÂÇ¥.
-	int pos_back[X_AND_Y];      // ÀÌÀü ÁÂÇ¥ÀÇ Á¤º¸. ÀÌ¹ÌÁö¸¦ »ç¿ëÇÒ ½Ã, ÀÌ ÁÂÇ¥¸¦ Åä´ë·Î ÀÌÀüÀÇ ÀÌ¹ÌÁö¸¦ Áö¿ö¾ßÇÔ.
-	int size[X_AND_Y];	      // width, height
+	int timer;     	 	  // ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½Ì¸Ó¸ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½?
+	int move_flag;   	  // ï¿½ï¿½ï¿½ï¿½ï¿½Ì°ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Æ´ï¿½ï¿½ï¿½,
+	int pos[X_COMMA_Y]; 		  // x,y
+	int pos_init[X_COMMA_Y];  	  // ï¿½Ê±ï¿½ ï¿½ï¿½Ç¥.
+	int pos_back[X_COMMA_Y];      // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ç¥ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½. ï¿½Ì¹ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½, ï¿½ï¿½ ï¿½ï¿½Ç¥ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¹ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
+	int size[X_COMMA_Y];	      // WINDOW_WIDTH, WINDOW_HEIGHT
 
-	unsigned short color; // ³ªÁß¿¡ ÀÌ¹ÌÁö·Î ´ëÃ¼.
-	int speed_step;	 	  // ÀÌ¹ÌÁö°¡ ¾ó¸¶³ª »¡¸® ÀÌµ¿µÇ°Ô ÇÒ °ÍÀÎÁö.
-	int move_step;		  // ÀÌ¹ÌÁö¸¦ ¾ó¸¶³ª ÀÌµ¿½ÃÅ³ °ÍÀÎ°¡?
-	int beam_flag;		  // beam ¹ß»ç µÆ´ÂÁö ¿©ºÎ flag
+	unsigned short color; // ï¿½ï¿½ï¿½ß¿ï¿½ ï¿½Ì¹ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ã¼.
+	int speed_step;	 	  // ï¿½Ì¹ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ó¸¶³ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ìµï¿½ï¿½Ç°ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
+	int move_step;		  // ï¿½Ì¹ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ó¸¶³ï¿½ ï¿½Ìµï¿½ï¿½ï¿½Å³ ï¿½ï¿½ï¿½Î°ï¿½?
+	int beam_flag;		  // beam ï¿½ß»ï¿½ ï¿½Æ´ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ flag
 	int cd_flag;		  // collision detection flag
-	int dir[X_AND_Y];           // x,y ¹æÇâÀÇ ¹æÇâÁ¤º¸. 1°ú -1 °ªÀÌ ÀÖ´Ù.
-	int missile_dir;      // 1,2,3,4 Å° ÀÔ·Â°ªÀ» ¹æÇâ°ªÀ¸·Î ¼³Á¤ÇÑ´Ù. ÀÌ °ªÀÌ ¹Ì»çÀÏÀÇ ¹æÇâ°ú µ¿ÀÏÇÏ´Ù.
+	int dir[X_COMMA_Y];           // x,y ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½. 1ï¿½ï¿½ -1 ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½.
+	int missile_dir;      // 1,2,3,4 Å° ï¿½Ô·Â°ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½â°ªï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½. ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ì»ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.
 };
 
 /* 5:5:5:I Color Definition */
@@ -45,18 +76,55 @@ enum Color{
 	RED=0xf800
 };
 
-struct Object Tank = {0,1,{0,10},{0,10},{0,10},{30,10},
-					RED, 4, 8, 0, 0, {1,1}, 1};
-struct Object Ufo = {0,1,{160,300},{160,300},{160,300},{30,30},
-					BLUE, 4, 7, 0, 0, {1,1}};
-struct Object Tank_beam = {0,1,{319,239},{319,239},{319,239},{10,10},
-					GREEN, 3, 10, 0, 0, {1,1}};
+struct Object Tank = {
+	0,
+	1,
+	{0,10},
+	{0,10},
+	{0,10},
+	{30,10},
+	RED,
+	4,
+	8,
+	0,
+	0,
+	{1,1},
+	1
+};
+struct Object Ufo = {
+	0,
+	1,
+	{160,300},
+	{160,300},
+	{160,300},
+	{30,30},
+	BLUE,
+	4,
+	7,
+	0,
+	0,
+	{1,1}
+};
+struct Object Tank_beam = {
+	0,
+	1,
+	{319,239},
+	{319,239},
+	{319,239},
+	{10,10},
+	GREEN,
+	3,
+	10,
+	0,
+	0,
+	{1,1}
+};
 
 
 
 void Game_Init(void)
 {
-	Lcd_Clr_Screen(BACK_COLOR);
+	Lcd_Clr_Screen(BG_COLOR);
 	Timer0_Repeat(20);
 }
 
@@ -68,7 +136,7 @@ void Galaxy_Maestro(void)
 
 	for(;;)
 	{
-		Move_Object();
+		Update_Object();
 		collision_detect();
 		Draw_Object();
 	}
@@ -78,127 +146,133 @@ void Galaxy_Maestro(void)
 
 
 /* ============================================
- * ÀÌ °÷¿¡´Â °´Ã¼ÀÇ ÇàÀ§(¸â¹ö°ª °»½Å µî)¿Í °ü·ÃµÈ ÄÚµå¸¦ ÀÛ¼ºÇÑ´Ù..
- * ============================================
+* ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ã¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½)ï¿½ï¿½ ï¿½ï¿½ï¿½Ãµï¿½ ï¿½Úµå¸¦ ï¿½Û¼ï¿½ï¿½Ñ´ï¿½..
+* ============================================
 */
-void Move_Object(void)
+void Update_Object(void)
 {
-	int key = 0;
+	int key = DEFAULT;
 	if(Timer0_Check_Expired())
 	{
-		Ufo.timer++;
+
 		Tank_beam.timer++;
-
 		key = Key_Get_Pressed();
-		Move_Tank_Depend_On_Key(key);
+		Update_Ufo_Members();
+		Update_Tank_Members_Depend_On_Key(key);
+		Update_TankBeam_Members_Depend_On_Key(key);
 
-
-		if(Ufo.timer >= Ufo.speed_step)
-		{
-			Ufo.timer = 0;
-			Ufo.pos_back[Y] = Ufo.pos[Y];
-			Ufo.pos[Y] = Ufo.pos[Y] - Ufo.move_step;
-			Ufo.move_flag = 1;
-		}
-		if(key == 5)
-		{
-			if(Tank_beam.beam_flag == 0)
-			{
-				Tank_beam.beam_flag = 1;
-			}
-		}
-		if(Tank_beam.beam_flag == 0)
-		{
-			Tank_beam.pos_init[X] = Tank.pos[X]+13;
-			Tank_beam.pos_init[Y] = Tank.pos[Y]+12;
-			Tank_beam.pos_back[X] = Tank_beam.pos_init[X];
-			Tank_beam.pos_back[Y] = Tank_beam.pos_init[Y];
-			Tank_beam.pos[X] = Tank_beam.pos_init[X];
-			Tank_beam.pos[Y] = Tank_beam.pos_init[Y];
-		}
-		if(Tank_beam.beam_flag != 0 && Tank_beam.timer >= Tank_beam.speed_step)
-		{
-			Tank_beam.timer = 0;
-			Tank_beam.pos_back[Y] = Tank_beam.pos[Y];
-			Tank_beam.pos[Y] = Tank_beam.pos[Y] + Tank_beam.move_step;
-			Tank_beam.move_flag = 1;
-		}
-
-//		Uart_Printf("Tank.timer %d / Tank.speed_step %d\n", Tank.timer, Tank.speed_step);
+		//		Uart_Printf("Tank.timer %d / Tank.speed_step %d\n", Tank.timer, Tank.speed_step);
 	}
 }
 
 
 void collision_detect(void)
 {
-	if(Tank_beam.beam_flag != 0 && Tank_beam.cd_flag == 0)
+	if(Tank_beam.beam_flag != NOT_FIRED && Tank_beam.cd_flag == OBJECT_NOT_CRASHED)
 	{
 		if((Tank_beam.pos[X] > Ufo.pos[X]) && \
-		   (Tank_beam.pos[X] + Tank_beam.size[X] < Ufo.pos[X] + Ufo.size[X]) )
+		(Tank_beam.pos[X] + Tank_beam.size[X] < Ufo.pos[X] + Ufo.size[X]) )
 		{
 			if((Tank_beam.pos[Y] + Tank_beam.size[Y]  >= Ufo.pos[Y]))
 			{
 
-				Tank_beam.move_flag = 1;
-				Ufo.move_flag = 1;
+				Tank_beam.move_flag = MOVED;
+				Ufo.move_flag = MOVED;
 
-				Ufo.timer = 0;
-				Tank_beam.timer = 0;
+				Ufo.timer = ZERO;
+				Tank_beam.timer = ZERO;
 
-				Tank_beam.cd_flag = 1;
-				Ufo.cd_flag = 1;
+				Tank_beam.cd_flag = OBJECT_CRASHED;
+				Ufo.cd_flag = OBJECT_CRASHED;
 			}
 		}
 	}
 }
 
-
-void Move_Tank_Depend_On_Key(int key)
+void Update_Ufo_Members(void)
 {
-	// ÀÔ·ÂÀº ¿ÀÁ÷ 1~4±îÁö¸¸ ¹Þ´Â´Ù.
-	if(key < 1 || key > 4) return;
-	// ÅÊÅ©¸¦ À§·Î ¿òÁ÷ÀÓ.
-	if(key == 1)
+	Ufo.timer++;
+	if(Ufo.timer >= Ufo.speed_step)
 	{
-		Tank.pos_back[Y] = Tank.pos[Y];			 // ÇöÀçÀÇ À§Ä¡¸¦ º¤¾÷ÇØ ³õ´Â´Ù.
-		Tank.pos[Y] = Tank.pos[Y] - Tank.move_step; // move_step ÀÌ¹ÌÁö¸¦ ¾ó¸¶³ª ÀÌµ¿½ÃÅ³ °ÍÀÎ°¡?
-		Tank.move_flag = 1;						 //
-	}
-	// ÅÊÅ©¸¦ ÁÂÃøÀ¸·Î ¿òÁ÷ÀÓ.
-	if(key == 2)
-	{
-		Tank.pos_back[X] = Tank.pos[X];			 // ÇöÀçÀÇ À§Ä¡¸¦ º¤¾÷ÇØ ³õ´Â´Ù.
-		Tank.pos[X] = Tank.pos[X] - Tank.move_step; // move_step ÀÌ¹ÌÁö¸¦ ¾ó¸¶³ª ÀÌµ¿½ÃÅ³ °ÍÀÎ°¡?
-		Tank.move_flag = 1;						 //
-	}
-	// ÅÊÅ©¸¦ À§·Î ¿òÁ÷ÀÓ.
-	if(key == 3)
-	{
-		Tank.pos_back[Y] = Tank.pos[Y];			 // ÇöÀçÀÇ À§Ä¡¸¦ º¤¾÷ÇØ ³õ´Â´Ù.
-		Tank.pos[Y] = Tank.pos[Y] + Tank.move_step; // move_step ÀÌ¹ÌÁö¸¦ ¾ó¸¶³ª ÀÌµ¿½ÃÅ³ °ÍÀÎ°¡?
-		Tank.move_flag = 1;						 //
-	}
-	// ÅÊÅ©¸¦ ¿ìÃøÀ¸·Î ¿òÁ÷ÀÓ.
-	if(key == 4)
-	{
-
-		Tank.pos_back[X] = Tank.pos[X];			 // ÇöÀçÀÇ À§Ä¡¸¦ º¤¾÷ÇØ ³õ´Â´Ù.
-		Tank.pos[X] = Tank.pos[X] + Tank.move_step; // move_step ÀÌ¹ÌÁö¸¦ ¾ó¸¶³ª ÀÌµ¿½ÃÅ³ °ÍÀÎ°¡?
-		Tank.move_flag = 1;						 //
+		Ufo.timer = ZERO;
+		Ufo.pos_back[Y] = Ufo.pos[Y];
+		Ufo.pos[Y] = Ufo.pos[Y] - Ufo.move_step;
+		Ufo.move_flag = MOVED;
 	}
 }
 
 
+void Update_Tank_Members_Depend_On_Key(int key)
+{
+	// ï¿½Ô·ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ 1~4ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Þ´Â´ï¿½.
+	if(key < UP || key > RIGHT) return;
+	// ï¿½ï¿½Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
+	if(key == UP)
+	{
+		Tank.pos_back[Y] = Tank.pos[Y];			 // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Â´ï¿½.
+		Tank.pos[Y] = Tank.pos[Y] - Tank.move_step; // move_step ï¿½Ì¹ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ó¸¶³ï¿½ ï¿½Ìµï¿½ï¿½ï¿½Å³ ï¿½ï¿½ï¿½Î°ï¿½?
+		Tank.move_flag = MOVED;						 //
+	}
+	// ï¿½ï¿½Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
+	if(key == LEFT)
+	{
+		Tank.pos_back[X] = Tank.pos[X];			 // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Â´ï¿½.
+		Tank.pos[X] = Tank.pos[X] - Tank.move_step; // move_step ï¿½Ì¹ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ó¸¶³ï¿½ ï¿½Ìµï¿½ï¿½ï¿½Å³ ï¿½ï¿½ï¿½Î°ï¿½?
+		Tank.move_flag = MOVED;						 //
+	}
+	// ï¿½ï¿½Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
+	if(key == DOWN)
+	{
+		Tank.pos_back[Y] = Tank.pos[Y];			 // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Â´ï¿½.
+		Tank.pos[Y] = Tank.pos[Y] + Tank.move_step; // move_step ï¿½Ì¹ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ó¸¶³ï¿½ ï¿½Ìµï¿½ï¿½ï¿½Å³ ï¿½ï¿½ï¿½Î°ï¿½?
+		Tank.move_flag = MOVED;						 //
+	}
+	// ï¿½ï¿½Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
+	if(key == RIGHT)
+	{
 
+		Tank.pos_back[X] = Tank.pos[X];			 // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Â´ï¿½.
+		Tank.pos[X] = Tank.pos[X] + Tank.move_step; // move_step ï¿½Ì¹ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ó¸¶³ï¿½ ï¿½Ìµï¿½ï¿½ï¿½Å³ ï¿½ï¿½ï¿½Î°ï¿½?
+		Tank.move_flag = MOVED;						 //
+	}
+}
+
+
+void Update_TankBeam_Members_Depend_On_Key(int key)
+{
+	if(key == FIRE)
+	{
+		if(Tank_beam.beam_flag == NOT_FIRED)
+		{
+			Tank_beam.beam_flag = FIRED;
+		}
+	}
+	if(Tank_beam.beam_flag == NOT_FIRED)
+	{
+		Tank_beam.pos_init[X] = Tank.pos[X] + 13;
+		Tank_beam.pos_init[Y] = Tank.pos[Y] + 12;
+		Tank_beam.pos_back[X] = Tank_beam.pos_init[X];
+		Tank_beam.pos_back[Y] = Tank_beam.pos_init[Y];
+		Tank_beam.pos[X] = Tank_beam.pos_init[X];
+		Tank_beam.pos[Y] = Tank_beam.pos_init[Y];
+	}
+	if(Tank_beam.beam_flag != NOT_FIRED && Tank_beam.timer >= Tank_beam.speed_step)
+	{
+		Tank_beam.timer = ZERO;
+		Tank_beam.pos_back[Y] = Tank_beam.pos[Y];
+		Tank_beam.pos[Y] = Tank_beam.pos[Y] + Tank_beam.move_step;
+		Tank_beam.move_flag = MOVED;
+	}
+}
 
 /* ============================================
- * ÀÌ °÷¿¡´Â È­¸éÀ» ±×¸®´Â °÷°ú °ü·ÃµÈ ÄÚµå¸¦ ÀÛ¼ºÇÑ´Ù.
- * ============================================
+* ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ È­ï¿½ï¿½ï¿½ï¿½ ï¿½×¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ãµï¿½ ï¿½Úµå¸¦ ï¿½Û¼ï¿½ï¿½Ñ´ï¿½.
+* ============================================
 */
 
 void Draw_Object(void)
 {
-	if((Tank.pos[X] >= WIDTH))
+	if((Tank.pos[X] >= WINDOW_WIDTH))
 	{
 		Tank.pos[X] = Tank.pos_init[X];
 	}
@@ -206,52 +280,58 @@ void Draw_Object(void)
 	if((Ufo.pos[Y] < 0))
 	{
 		Ufo.pos[Y] = Ufo.pos_init[Y];
-		Lcd_Draw_Bar(Ufo.pos_back[X], 0, Ufo.pos_back[X] + Ufo.size[X], 20, BACK_COLOR);
+		Lcd_Draw_Bar(Ufo.pos_back[X], 0, Ufo.pos_back[X] + Ufo.size[X], 20, BG_COLOR);
 	}
-	if((Tank_beam.pos[Y] > 239))
+	if((Tank_beam.pos[Y] > WINDOW_HEIGHT - 1))
 	{
-		Tank_beam.beam_flag = 0;
+		Tank_beam.beam_flag = NOT_FIRED;
 	}
 
-	if(Tank.move_flag != 0) // ÀÌ¹ÌÁö°¡ ¿òÁ÷¿´À¸¸é, »õ·Î¿î °÷À» ±×¸®°í, ±× ÀÌÀü ÁÂÇ¥´Â Áö¿î´Ù.
+	if(Tank.move_flag != NOT_MOVED) // ï¿½Ì¹ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½Î¿ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½×¸ï¿½ï¿½ï¿½, ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ç¥ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
 	{
-		Lcd_Draw_Bar(Tank.pos_back[X], Tank.pos_back[Y], Tank.pos_back[X] + Tank.size[X], Tank.pos_back[Y] + Tank.size[Y], BACK_COLOR);
+		Lcd_Draw_Bar(Tank.pos_back[X], Tank.pos_back[Y], Tank.pos_back[X] + Tank.size[X], Tank.pos_back[Y] + Tank.size[Y], BG_COLOR);
 		Lcd_Draw_Bar(Tank.pos[X], Tank.pos[Y], Tank.pos[X] + Tank.size[X], Tank.pos[Y] + Tank.size[Y], Tank.color);
-		Tank.move_flag = 0;
+		Tank.move_flag = NOT_MOVED;
 	}
-	if(Ufo.move_flag != 0)
+	if(Ufo.move_flag != NOT_MOVED)
 	{
-		Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y], Ufo.pos_back[X] + Ufo.size[X], Ufo.pos_back[Y] + Ufo.size[Y], BACK_COLOR);
+		Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y], Ufo.pos_back[X] + Ufo.size[X], Ufo.pos_back[Y] + Ufo.size[Y], BG_COLOR);
 		Lcd_Draw_Bar(Ufo.pos[X], Ufo.pos[Y], Ufo.pos[X] + Ufo.size[X], Ufo.pos[Y] - Ufo.size[Y], Ufo.color);
-		Ufo.move_flag = 0;
+		Ufo.move_flag = NOT_MOVED;
 	}
-	if(Tank_beam.move_flag != 0)
+	if(Tank_beam.move_flag != NOT_MOVED)
 	{
-		Lcd_Draw_Bar(Tank_beam.pos_back[X], Tank_beam.pos_back[Y], Tank_beam.pos_back[X] + Tank_beam.size[X], Tank_beam.pos_back[Y] + Tank_beam.size[Y], BACK_COLOR);
+		Lcd_Draw_Bar(Tank_beam.pos_back[X], Tank_beam.pos_back[Y], Tank_beam.pos_back[X] + Tank_beam.size[X], Tank_beam.pos_back[Y] + Tank_beam.size[Y], BG_COLOR);
 		Lcd_Draw_Bar(Tank_beam.pos[X], Tank_beam.pos[Y], Tank_beam.pos[X] + Tank_beam.size[X], Tank_beam.pos[Y] + Tank_beam.size[Y], Tank_beam.color);
-		Tank_beam.move_flag = 0;
+		Tank_beam.move_flag = NOT_MOVED;
 	}
 	explosion();
-	if(Tank_beam.cd_flag == 1)
+	if(Tank_beam.cd_flag == OBJECT_CRASHED)
 	{
-		Lcd_Draw_Bar(Tank_beam.pos[X], Tank_beam.pos[Y], Tank_beam.pos[X] + Tank_beam.size[X], Tank_beam.pos[Y] + Tank_beam.size[Y], BACK_COLOR);
-		Tank_beam.cd_flag = 0;
-		Tank_beam.beam_flag = 0;
+		Lcd_Draw_Bar(Tank_beam.pos[X],
+								 Tank_beam.pos[Y],
+								 Tank_beam.pos[X] + Tank_beam.size[X],
+								 Tank_beam.pos[Y] + Tank_beam.size[Y],
+								 BG_COLOR
+							 );
+		Tank_beam.cd_flag = OBJECT_NOT_CRASHED;
+		Tank_beam.beam_flag = NOT_FIRED;
 	}
-	if(Ufo.cd_flag == 1)
+	if(Ufo.cd_flag == OBJECT_CRASHED)
 	{
 		Lcd_Draw_Bar(Ufo.pos[X], Ufo.pos[Y],
-				Ufo.pos[X] + Ufo.size[X],
-				Ufo.pos[Y] + Ufo.size[Y],
-				BACK_COLOR);
-		Ufo.cd_flag = 0;
-		Ufo.pos[Y] = Ufo.pos_init[Y];
+								 Ufo.pos[X] + Ufo.size[X],
+								 Ufo.pos[Y] + Ufo.size[Y],
+								 BG_COLOR
+							 );
+			Ufo.cd_flag = OBJECT_NOT_CRASHED;
+			Ufo.pos[Y] = Ufo.pos_init[Y];
 	}
 }
 
 void explosion(void)
 {
-	if(Tank_beam.cd_flag == 1 || Ufo.cd_flag == 1)
+	if(Tank_beam.cd_flag == OBJECT_CRASHED || Ufo.cd_flag == OBJECT_CRASHED)
 	{
 		Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], WHITE);
 		Timer4_Delay(100);
