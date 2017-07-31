@@ -49,7 +49,7 @@ void Draw_Object(void);
 void Galaxy_Maestro(void);
 void Update_Tank(int);
 void Update_Ufo(void);
-void Update_TankBeam(int);
+void Update_Missile(int);
 void Draw_Tank(void);
 void Draw_Missile(void);
 void Draw_Ufo(void);
@@ -91,8 +91,9 @@ enum WINDOW{
 };
 
 enum TANK_DATA{
-	POS_INIT_X=0,
-	POS_INIT_Y=10,
+	TANK_TIMER=0,
+	TANK_POS_INIT_X=0,
+	TANK_POS_INIT_Y=10,
 	TANK_WIDTH=15,
 	TANK_HEIGHT=10,
 	TANK_SPEED_RATE=4,
@@ -102,14 +103,14 @@ int speed_step;	 	  // 이미지가 얼마나 빨리 이동되게 할 것인지.
 int move_step;		  // 이미지를 얼마나 이동시킬 것인가?
 int beam_flag;		  // beam 발사 됐는지 여부 flag
 int cd_flag;		  // collision detection flag
-int dir[X_COMMA_Y];           // x,y 방향의 방향정보. 1과 -1 값이 있다.
+int dir[X_COMMA_Y];   // x,y 방향의 방향정보. 1과 -1 값이 있다.
 int missile_dir;      // 1,2,3,4번 키를 누름에 따라 미사일의 방향이 정해진다. 차례대로, up, left, down, right
 
 struct Object Tank = {
-	0,
+	TANK_TIMER,
 	1,
 	{0,10},  // 현재 탱크 위치.
-	{POS_INIT_X,POS_INIT_Y},  // 초기화시킬 시 탱크 위치.
+	{TANK_POS_INIT_X,TANK_POS_INIT_Y},  // 초기화시킬 시 탱크 위치.
 	{0,10},  // 탱크의 위치가 움직이게 될 때, 탱크의 위치를 벡업.
 	{TANK_WIDTH,TANK_HEIGHT}, // 탱크의 크기. 가로 15, 세로 10
 	RED,
@@ -188,7 +189,7 @@ void Update_Object(void)
 		key = Key_Get_Pressed();
 		Update_Ufo();
 		Update_Tank(key);
-		Update_TankBeam(key);
+		Update_Missile(key);
 	}
 }
 
@@ -265,7 +266,7 @@ void Update_Tank(int key)
 }
 
 
-void Update_TankBeam(int key)
+void Update_Missile(int key)
 {
 	Missile.timer++;
 	if(key == FIRE)
@@ -340,17 +341,17 @@ void Draw_Tank(void)
 		Tank.pos[X] = Tank.pos_back[X];
 	}
 	if(Tank.pos[Y] > WINDOW_HEIGHT - TANK_HEIGHT){
-		Uart_Printf("exceed height case, check y : %d\n",Tank.pos[Y]);
 		Tank.pos[Y] = Tank.pos_back[Y];
 	}
 	if(Tank.pos[Y] < W_Y_MIN){
-		Uart_Printf("less than ground case, check y : %d\n",Tank.pos[Y]);
 		Tank.pos[Y] = Tank.pos_back[Y];
 	}
+
 	// draw tank
 	// if tank moved, then flag will be enabled. after enabled, updated.
 	if(Tank.move_flag != NOT_MOVED) // �̹����� ����������, ���ο� ���� �׸���, �� ���� ��ǥ�� ������.
 	{
+		Uart_Printf("tank move!! Y=%d\n", Tank.pos[Y]);
 		// remove previous state in lcd
 		Lcd_Draw_Bar(Tank.pos_back[X], Tank.pos_back[Y], Tank.pos_back[X] + Tank.size[X], Tank.pos_back[Y] + Tank.size[Y], BG_COLOR);
 		// draw current state in lcd
