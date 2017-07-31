@@ -86,7 +86,7 @@ void Main(void)
 	Timer3_Buzzer_Init();
 	Timer4_Init();
 	Lcd_Graphic_Init();
-	Lcd_Clr_Screen(0xf800);
+//	Lcd_Clr_Screen(0xf800);
 	Uart_Printf("Welcome to Galaxy Maestro Game!\n");
 
 	User_Main();
