@@ -51,9 +51,9 @@ void Update_Tank(int);
 void Update_Ufo(void);
 void Update_TankBeam(int);
 void Draw_Tank(void);
-void Draw_Tank_Beam(void);
+void Draw_Missile(void);
 void Draw_Ufo(void);
-void Draw_Tank_Beam_Crashed(void);
+void Draw_Missile_Crashed(void);
 void Draw_Ufo_Crashed(void);
 
 struct Object
@@ -135,7 +135,7 @@ struct Object Ufo = {
 	0,
 	{1,1}
 };
-struct Object Tank_beam = {
+struct Object Missile = {
 	0,
 	1,
 	{319,239},
@@ -195,21 +195,21 @@ void Update_Object(void)
 
 void collision_detect(void)
 {
-	if(Tank_beam.beam_flag != NOT_FIRED &&
-	   Tank_beam.cd_flag == OBJECT_NOT_CRASHED)
+	if(Missile.beam_flag != NOT_FIRED &&
+	   Missile.cd_flag == OBJECT_NOT_CRASHED)
 	{
-		if((Tank_beam.pos[X] > Ufo.pos[X]) && \
-		(Tank_beam.pos[X] + Tank_beam.size[X] < Ufo.pos[X] + Ufo.size[X]) )
+		if((Missile.pos[X] > Ufo.pos[X]) && \
+		(Missile.pos[X] + Missile.size[X] < Ufo.pos[X] + Ufo.size[X]) )
 		{
-			if((Tank_beam.pos[Y] + Tank_beam.size[Y]  >= Ufo.pos[Y]))
+			if((Missile.pos[Y] + Missile.size[Y]  >= Ufo.pos[Y]))
 			{
-				Tank_beam.move_flag = MOVED;
+				Missile.move_flag = MOVED;
 				Ufo.move_flag = MOVED;
 
 				Ufo.timer = ZERO;
-				Tank_beam.timer = ZERO;
+				Missile.timer = ZERO;
 
-				Tank_beam.cd_flag = OBJECT_CRASHED;
+				Missile.cd_flag = OBJECT_CRASHED;
 				Ufo.cd_flag = OBJECT_CRASHED;
 			}
 		}
@@ -267,31 +267,31 @@ void Update_Tank(int key)
 
 void Update_TankBeam(int key)
 {
-	Tank_beam.timer++;
+	Missile.timer++;
 	if(key == FIRE)
 	{
-		Tank_beam.beam_flag = FIRED;
+		Missile.beam_flag = FIRED;
 		// useless if statement
-		// if(Tank_beam.beam_flag == NOT_FIRED)
+		// if(Missile.beam_flag == NOT_FIRED)
 		// {
-		// 	Tank_beam.beam_flag = FIRED;
+		// 	Missile.beam_flag = FIRED;
 		// }
 	}
-	if(Tank_beam.beam_flag == NOT_FIRED)
+	if(Missile.beam_flag == NOT_FIRED)
 	{
-		Tank_beam.pos_init[X] = Tank.pos[X] + TANK_WIDTH/2;
-		Tank_beam.pos_init[Y] = Tank.pos[Y] + 2*TANK_HEIGHT;
-		Tank_beam.pos_back[X] = Tank_beam.pos_init[X];
-		Tank_beam.pos_back[Y] = Tank_beam.pos_init[Y];
-		Tank_beam.pos[X] = Tank_beam.pos_init[X];
-		Tank_beam.pos[Y] = Tank_beam.pos_init[Y];
+		Missile.pos_init[X] = Tank.pos[X] + TANK_WIDTH/2;
+		Missile.pos_init[Y] = Tank.pos[Y] + 2*TANK_HEIGHT;
+		Missile.pos_back[X] = Missile.pos_init[X];
+		Missile.pos_back[Y] = Missile.pos_init[Y];
+		Missile.pos[X] = Missile.pos_init[X];
+		Missile.pos[Y] = Missile.pos_init[Y];
 	}
-	if(Tank_beam.beam_flag != NOT_FIRED && Tank_beam.timer >= Tank_beam.speed_step)
+	if(Missile.beam_flag != NOT_FIRED && Missile.timer >= Missile.speed_step)
 	{
-		Tank_beam.timer = ZERO;
-		Tank_beam.pos_back[Y] = Tank_beam.pos[Y];
-		Tank_beam.pos[Y] = Tank_beam.pos[Y] + Tank_beam.move_step;
-		Tank_beam.move_flag = MOVED;
+		Missile.timer = ZERO;
+		Missile.pos_back[Y] = Missile.pos[Y];
+		Missile.pos[Y] = Missile.pos[Y] + Missile.move_step;
+		Missile.move_flag = MOVED;
 	}
 }
 
@@ -306,15 +306,15 @@ void Draw_Object(void)
 	// DO NOT CHANGE PROCEDURE ORDER!!!!
 	Draw_Tank();
 	Draw_Ufo();
-	Draw_Tank_Beam();
+	Draw_Missile();
 	Check_Explosion();
-	Draw_Tank_Beam_Crashed();
+	Draw_Missile_Crashed();
 	Draw_Ufo_Crashed();
 }
 
 void Check_Explosion(void)
 {
-	if(Tank_beam.cd_flag == OBJECT_CRASHED || Ufo.cd_flag == OBJECT_CRASHED)
+	if(Missile.cd_flag == OBJECT_CRASHED || Ufo.cd_flag == OBJECT_CRASHED)
 	{
 		Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], WHITE);
 		Timer4_Delay(100);
@@ -386,44 +386,44 @@ void Draw_Ufo(void)
 	}
 }
 
-void Draw_Tank_Beam()
+void Draw_Missile()
 {
 	// draw tank beam - edge case
 	// if fired beam off from the window, then set the tank beam member flag as not fired.
-	if((Tank_beam.pos[Y] > WINDOW_HEIGHT - 1))
+	if((Missile.pos[Y] > WINDOW_HEIGHT - 1))
 	{
-		Tank_beam.beam_flag = NOT_FIRED;
+		Missile.beam_flag = NOT_FIRED;
 	}
 
 	// draw tank beam
 	// if tank beam moved, then flag will be enabled. after enabled, updated.
-	if(Tank_beam.move_flag != NOT_MOVED)
+	if(Missile.move_flag != NOT_MOVED)
 	{
 		// remove previous state in lcd
-		Lcd_Draw_Bar(Tank_beam.pos_back[X], Tank_beam.pos_back[Y], Tank_beam.pos_back[X] + Tank_beam.size[X], Tank_beam.pos_back[Y] + Tank_beam.size[Y], BG_COLOR);
+		Lcd_Draw_Bar(Missile.pos_back[X], Missile.pos_back[Y], Missile.pos_back[X] + Missile.size[X], Missile.pos_back[Y] + Missile.size[Y], BG_COLOR);
 		// draw current state in lcd
-		Lcd_Draw_Bar(Tank_beam.pos[X], Tank_beam.pos[Y], Tank_beam.pos[X] + Tank_beam.size[X], Tank_beam.pos[Y] + Tank_beam.size[Y], Tank_beam.color);
+		Lcd_Draw_Bar(Missile.pos[X], Missile.pos[Y], Missile.pos[X] + Missile.size[X], Missile.pos[Y] + Missile.size[Y], Missile.color);
 		// set to tank beam flag not moved.
-		Tank_beam.move_flag = NOT_MOVED;
+		Missile.move_flag = NOT_MOVED;
 	}
 }
 
-void Draw_Tank_Beam_Crashed(void)
+void Draw_Missile_Crashed(void)
 {
 	// draw tank beam object when crashed.
-	if(Tank_beam.cd_flag == OBJECT_CRASHED)
+	if(Missile.cd_flag == OBJECT_CRASHED)
 	{
 		// remove tank beam object, set color to black.
-		Lcd_Draw_Bar(Tank_beam.pos[X],
-								 Tank_beam.pos[Y],
-								 Tank_beam.pos[X] + Tank_beam.size[X],
-								 Tank_beam.pos[Y] + Tank_beam.size[Y],
+		Lcd_Draw_Bar(Missile.pos[X],
+								 Missile.pos[Y],
+								 Missile.pos[X] + Missile.size[X],
+								 Missile.pos[Y] + Missile.size[Y],
 								 BG_COLOR
 							 );
 		// reverse state
-		Tank_beam.cd_flag = OBJECT_NOT_CRASHED;
+		Missile.cd_flag = OBJECT_NOT_CRASHED;
 		// set tank beam as not fired
-		Tank_beam.beam_flag = NOT_FIRED;
+		Missile.beam_flag = NOT_FIRED;
 	}
 }
 void Draw_Ufo_Crashed(void)
