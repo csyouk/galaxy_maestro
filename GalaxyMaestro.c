@@ -217,12 +217,14 @@ void collision_detect(void)
 	if(Missile.missile_flag != NOT_FIRED &&
 	   Missile.cd_flag == OBJECT_NOT_CRASHED)
 	{
-		if((Missile.pos[X] > Ufo.pos[X]) && \
-		(Missile.pos[X] + Missile.size[X] < Ufo.pos[X] + Ufo.size[X]))
+		if(
+			(Missile.pos[X] + MISSILE_WIDTH/2 > Ufo.pos[X]) &&
+			(Missile.pos[X] + MISSILE_WIDTH/2 < Ufo.pos[X]+Ufo.size[X]) &&
+			(Missile.pos[Y] + MISSILE_HEIGHT/2 > Ufo.pos[Y] - Ufo.size[Y]) &&
+			(Missile.pos[Y] + MISSILE_HEIGHT/2 < Ufo.pos[Y] + Ufo.size[Y] - Ufo.size[Y])
+		  )
 		{
-			if((Missile.pos[Y]  > Ufo.pos[Y]) && \
-			(Missile.pos[Y] + Missile.size[Y] < Ufo.pos[Y] + Ufo.size[Y]))
-			{
+
 				Missile.move_flag = MOVED;
 				Ufo.move_flag = MOVED;
 
@@ -231,7 +233,7 @@ void collision_detect(void)
 
 				Missile.cd_flag = OBJECT_CRASHED;
 				Ufo.cd_flag = OBJECT_CRASHED;
-			}
+
 		}
 	}
 }
@@ -289,8 +291,8 @@ void Update_Missile(int _key)
 
 	if(Missile.missile_flag == NOT_FIRED)
 	{
-		Missile.pos_init[X] = Tank.pos[X] + TANK_WIDTH/2;
-		Missile.pos_init[Y] = Tank.pos[Y] + 2*TANK_HEIGHT;
+		Missile.pos_init[X] = Tank.pos[X];
+		Missile.pos_init[Y] = Tank.pos[Y];
 
 		Missile.pos_back[X] = Missile.pos_init[X];
 		Missile.pos_back[Y] = Missile.pos_init[Y];
@@ -363,16 +365,13 @@ void Draw_Tank(void)
 {
 	// draw tank - edge cases
 	// if tank position exceed window then block
-	if(Tank.pos[X] > WINDOW_WIDTH - TANK_WIDTH - 1){
+	if((Tank.pos[X] > WINDOW_WIDTH - TANK_WIDTH - 1) ||
+	   (Tank.pos[X] < W_X_MIN)){
 		Tank.pos[X] = Tank.pos_back[X];
 	}
-	if(Tank.pos[X] < W_X_MIN){
-		Tank.pos[X] = Tank.pos_back[X];
-	}
-	if(Tank.pos[Y] > WINDOW_HEIGHT - TANK_HEIGHT){
-		Tank.pos[Y] = Tank.pos_back[Y];
-	}
-	if(Tank.pos[Y] < W_Y_MIN){
+
+	if((Tank.pos[Y] > WINDOW_HEIGHT - TANK_HEIGHT) ||
+	   (Tank.pos[Y] < W_Y_MIN)	){
 		Tank.pos[Y] = Tank.pos_back[Y];
 	}
 
