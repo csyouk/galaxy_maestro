@@ -55,6 +55,9 @@ void Draw_Missile(void);
 void Draw_Ufo(void);
 void Draw_Missile_Crashed(void);
 void Draw_Ufo_Crashed(void);
+void print_tank(void);
+void print_ufo(void);
+void print_missile(void);
 
 struct Object
 {
@@ -94,10 +97,10 @@ enum TANK_DATA{
 	TANK_TIMER=0,
 	TANK_POS_INIT_X=0,
 	TANK_POS_INIT_Y=10,
-	TANK_WIDTH=15,
+	TANK_WIDTH=16,
 	TANK_HEIGHT=10,
 	TANK_SPEED_RATE=4,
-	TANK_FOOTSTEP=8,
+	TANK_FOOTSTEP=TANK_WIDTH/2,
 };
 int speed_step;	 	  // 이미지가 얼마나 빨리 이동되게 할 것인지.
 int move_step;		  // 이미지를 얼마나 이동시킬 것인가?
@@ -234,35 +237,29 @@ void Update_Tank(int key)
 {
 	// only key input 1~4 can pass.
 	if(key < UP || key > RIGHT) return;
-	// ��ũ�� ���� ������.
-	if(key == UP)
-	{
+
+	switch(key)
+	case UP:
 		Tank.pos_back[Y] = Tank.pos[Y];			 // ������ ��ġ�� ������ ���´�.
 		Tank.pos[Y] = Tank.pos[Y] - Tank.move_step; // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
 		Tank.move_flag = MOVED;						 //
-	}
-	// ��ũ�� �������� ������.
-	if(key == LEFT)
-	{
+		return;
+	case LEFT:
 		Tank.pos_back[X] = Tank.pos[X];			 // ������ ��ġ�� ������ ���´�.
 		Tank.pos[X] = Tank.pos[X] - Tank.move_step; // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
 		Tank.move_flag = MOVED;						 //
-	}
-	// ��ũ�� ���� ������.
-	if(key == DOWN)
-	{
+		return;
+	case DOWN:
 		Tank.pos_back[Y] = Tank.pos[Y];			     // ������ ��ġ�� ������ ���´�.
 		Tank.pos[Y] = Tank.pos[Y] + Tank.move_step;  // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
 		Tank.move_flag = MOVED;						 //
-	}
-	// ��ũ�� �������� ������.
-	if(key == RIGHT)
-	{
-
+		return;
+	case RIGHT:
 		Tank.pos_back[X] = Tank.pos[X];			     // ������ ��ġ�� ������ ���´�.
 		Tank.pos[X] = Tank.pos[X] + Tank.move_step;  // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
 		Tank.move_flag = MOVED;						 //
-	}
+		return;
+
 }
 
 
@@ -351,11 +348,14 @@ void Draw_Tank(void)
 	// if tank moved, then flag will be enabled. after enabled, updated.
 	if(Tank.move_flag != NOT_MOVED) // �̹����� ����������, ���ο� ���� �׸���, �� ���� ��ǥ�� ������.
 	{
-		Uart_Printf("tank move!! Y=%d\n", Tank.pos[Y]);
 		// remove previous state in lcd
 		Lcd_Draw_Bar(Tank.pos_back[X], Tank.pos_back[Y], Tank.pos_back[X] + Tank.size[X], Tank.pos_back[Y] + Tank.size[Y], BG_COLOR);
+		Uart_Printf("remove state ==>\n");
+		print_tank();
 		// draw current state in lcd
 		Lcd_Draw_Bar(Tank.pos[X], Tank.pos[Y], Tank.pos[X] + Tank.size[X], Tank.pos[Y] + Tank.size[Y], Tank.color);
+		Uart_Printf("draw state ==>\n");
+		print_tank();
 		// set to tank flag not moved.
 		Tank.move_flag = NOT_MOVED;
 	}
@@ -443,4 +443,29 @@ void Draw_Ufo_Crashed(void)
 		// set ufo position to beginning.
 		Ufo.pos[Y] = Ufo.pos_init[Y];
 	}
+}
+
+
+/* =====================================
+ * print states of objects
+ * =====================================
+ */
+void print_tank(void){
+	Uart_Printf("Timer : %d\n", Tank.timer);
+	Uart_Printf("move_flag : %d\n", Tank.move_flag);
+	Uart_Printf("pos[X] %d / pos[Y] %d\n", Tank.pos[X], Tank.pos[Y]);
+	Uart_Printf("pos_back[X] %d / pos_back[Y] %d\n", Tank.pos_back[X], Tank.pos_back[Y]);
+	Uart_Printf("size[X] %d / size[Y] %d\n", Tank.size[X], Tank.size[Y]);
+}
+void print_ufo(void){
+	Uart_Printf("Timer : %d\n", Tank.timer);
+	Uart_Printf("move_flag : %d\n", Tank.move_flag);
+	Uart_Printf("pos[X] %d / pos[Y] %d\n", Tank.pos[X], Tank.pos[Y]);
+	Uart_Printf("size[X] %d / size[Y] %d\n", Tank.size[X], Tank.size[Y]);
+}
+void print_missile(void){
+	Uart_Printf("Timer : %d\n", Tank.timer);
+	Uart_Printf("move_flag : %d\n", Tank.move_flag);
+	Uart_Printf("pos[X] %d / pos[Y] %d\n", Tank.pos[X], Tank.pos[Y]);
+	Uart_Printf("size[X] %d / size[Y] %d\n", Tank.size[X], Tank.size[Y]);
 }
