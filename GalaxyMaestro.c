@@ -94,16 +94,24 @@ enum TANK_DATA{
 	TANK_POS_INIT_Y=10,
 	TANK_WIDTH=16,
 	TANK_HEIGHT=10,
-	TANK_SPEED_RATE=4,
-	TANK_FOOTSTEP=TANK_WIDTH/2,
+	TANK_SPEED_RATE=5,
+	TANK_FOOTSTEP=TANK_WIDTH/8,
 	TANK_DIR=3
+};
+enum UFO_DATA{
+	UFO_WIDTH=30,
+	UFO_HEIGHT=30,
+	UFO_TIMER=0,
+	UFO_SPEED_RATE=1,
+	UFO_FOOTSTEP=2,
+	UFO_DIR=3
 };
 
 enum MISSILE_DATA{
 	MISSILE_WIDTH=6,
 	MISSILE_HEIGHT=6,
 	MISSILE_TIMER=0,
-	MISSILE_SPEED_RATE=2,
+	MISSILE_SPEED_RATE=1,
 	MISSILE_FOOTSTEP=4,
 	MISSILE_DIR=3
 };
@@ -129,10 +137,10 @@ struct Object Ufo = {
 	{160,300},
 	{160,300},
 	{160,300},
-	{30,30},
+	{UFO_WIDTH,UFO_HEIGHT},
 	BLUE,
-	MISSILE_SPEED_RATE,
-	MISSILE_FOOTSTEP,
+	UFO_SPEED_RATE,
+	UFO_FOOTSTEP,
 	0,
 	0,
 	0
@@ -146,8 +154,8 @@ struct Object Missile = {
 	{319,239},
 	{MISSILE_WIDTH,MISSILE_HEIGHT},
 	GREEN,
-	3,
-	10,
+	MISSILE_SPEED_RATE,
+	MISSILE_FOOTSTEP,
 	0,
 	0,
 	MISSILE_DIR
@@ -207,10 +215,14 @@ void collision_detect(void)
 	   Missile.cd_flag == OBJECT_NOT_CRASHED)
 	{
 		if((Missile.pos[X] > Ufo.pos[X]) && \
-		(Missile.pos[X] + Missile.size[X] < Ufo.pos[X] + Ufo.size[X]) )
+		(Missile.pos[X] + Missile.size[X] < Ufo.pos[X] + Ufo.size[X]))
 		{
-			if((Missile.pos[Y] + Missile.size[Y]  >= Ufo.pos[Y]))
+			if((Missile.pos[Y]  > Ufo.pos[Y]) && \
+			(Missile.pos[Y] + Missile.size[Y] < Ufo.pos[Y] + Ufo.size[Y]))
 			{
+				Uart_Printf("COOOOOOOOOOOO=\n");
+				print_ufo();
+				print_missile();
 				Missile.move_flag = MOVED;
 				Ufo.move_flag = MOVED;
 
@@ -284,7 +296,6 @@ void Update_Missile(int _key)
 
 		Missile.pos[X] = Missile.pos_init[X];
 		Missile.pos[Y] = Missile.pos_init[Y];
-		Uart_Printf("missile not fired / tank dir %d\n", Tank.dir);
 		return;
 	}
 
@@ -292,8 +303,6 @@ void Update_Missile(int _key)
 
 	if(_is_missile_moving)
 	{
-
-		Uart_Printf("finally!!! missile fired %d\n", Missile.dir);
 
 		Missile.timer = ZERO;
 		Missile.move_flag = MOVED;
@@ -422,12 +431,12 @@ void Draw_Missile()
 		Missile.missile_flag = NOT_FIRED;
 		Missile.dir = Tank.dir;
 	}
-	if(Missile.pos[X] < W_X_MIN - MISSILE_WIDTH + 1)
+	if(Missile.pos[X] < W_X_MIN - MISSILE_WIDTH)
 	{
 		Missile.missile_flag = NOT_FIRED;
 		Missile.dir = Tank.dir;
 	}
-	if(Missile.pos[X] > W_X_MAX - 1)
+	if(Missile.pos[X] > W_X_MAX + MISSILE_WIDTH - 1)
 	{
 		Missile.missile_flag = NOT_FIRED;
 		Missile.dir = Tank.dir;
@@ -504,13 +513,17 @@ void print_tank(void){
 	Uart_Printf("tank direction %d\n", Tank.dir);
 }
 void print_ufo(void){
-	Uart_Printf("Timer : %d\n", Tank.timer);
-	Uart_Printf("move_flag : %d\n", Tank.move_flag);
-	Uart_Printf("pos[X] %d / pos[Y] %d\n", Tank.pos[X], Tank.pos[Y]);
-	Uart_Printf("size[X] %d / size[Y] %d\n", Tank.size[X], Tank.size[Y]);
+	Uart_Printf("Ufo Timer : %d\n", Ufo.timer);
+	Uart_Printf("Ufo move_flag : %d\n", Ufo.move_flag);
+	Uart_Printf("Ufo pos[X] %d / pos[Y] %d\n", Ufo.pos[X], Ufo.pos[Y]);
+	Uart_Printf("Ufo pos_back[X] %d / pos_back[Y] %d\n", Ufo.pos_back[X], Ufo.pos_back[Y]);
+	Uart_Printf("Ufo size[X] %d / size[Y] %d\n", Ufo.size[X], Ufo.size[Y]);
 }
 void print_missile(void){
-	Uart_Printf("Timer : %d\n", Missile.timer);
-	Uart_Printf("move_flag : %d\n", Missile.move_flag);
-	Uart_Printf("dir : %d\n", Missile.dir);
+	Uart_Printf("Missile Timer : %d\n", Missile.timer);
+	Uart_Printf("Missile move_flag : %d\n", Missile.move_flag);
+	Uart_Printf("Missile pos[X] %d / pos[Y] %d\n", Missile.pos[X], Missile.pos[Y]);
+	Uart_Printf("Missile pos_back[X] %d / pos_back[Y] %d\n", Missile.pos_back[X], Missile.pos_back[Y]);
+	Uart_Printf("Missile size[X] %d / size[Y] %d\n", Missile.size[X], Missile.size[Y]);
+	Uart_Printf("Missile dir : %d\n", Missile.dir);
 }
