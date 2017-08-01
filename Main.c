@@ -53,9 +53,6 @@ int RTC_Get_Time(void)
 
 }
 
-#define printf 	Uart_Printf
-
-
 /* =========== ����� ���� ��� =========*/
 
 

@@ -1,13 +1,12 @@
 #include "device_driver.h"
 #include "2440addr.h"
 #include <stdlib.h>
+#include "constants.h"
 
 #define BG_COLOR 	BLACK
-#define WINDOW_WIDTH 		320
-#define WINDOW_HEIGHT 		240
 #define X 0
 #define Y 1
-#define X_COMMA_Y 2
+
 #define DEFAULT 0
 #define NOT_FIRED 0
 #define FIRED 1
@@ -18,21 +17,8 @@
 #define OBJECT_CRASHED 1
 #define NOT_PRESSED_YET -1
 
-/*
-terms about window edges
- ||       || ||
-|------1------|
-|             |
-2             4
-|             |
-|------3------|
+#define printf 	Uart_Printf
 
-line 1 : W_X_MIN
-line 2 : W_Y_MIN
-line 3 : W_X_MAX
-line 4 : W_Y_MAX
-
-*/
 
 
 void Game_Init(void);
@@ -49,199 +35,8 @@ void Draw_Missiles(void);
 void Draw_Ufo(void);
 void Draw_Missile_Crashed(void);
 void Draw_Ufo_Crashed(void);
-void print_tank(void);
-void print_ufo(void);
-void print_missile(int);
-void Missile_Fire(int);
-
-struct Object
-{
-	int timer;     	 	  // 몇번 타이머를 쓸 것인지?
-	int move_flag;   	  // 움직이고 있는 상태인지 아니지,
-	int pos[X_COMMA_Y]; 		  // x,y
-	int pos_init[X_COMMA_Y];  	  // 초기 좌표.
-	int pos_back[X_COMMA_Y];      // 이전 좌표의 정보. 이미지를 사용할 시, 이 좌표를 토대로 이전의 이미지를 지워야함.
-	int size[X_COMMA_Y];	      // width, height
-	unsigned short color; // 나중에 이미지로 대체.
-	int speed_step;	 	  // 이미지가 얼마나 빨리 이동되게 할 것인지.
-	int move_step;		  // 이미지를 얼마나 이동시킬 것인가?
-	int missile_flag;		  // missile 발사 됐는지 여부 flag
-	int cd_flag;		  // collision detection flag
-	int dir;           // 1,2,3,4번 키를 누름에 따라 미사일의 방향이 정해진다. 차례대로, up, left, down, right
-	int fired_cnt;        // tank 객체에서 미사일이 발사된 횟수를 관리한다.
-	int fly_dir[X_COMMA_Y]; // ufo의 x,y방향을 결정.
-	int launch_order;     // 발사된 순서 저장.
-};
-
-struct KEY {
-	char pre;
-	char cur;
-};
-
-struct Object Ufos[5];
-
-enum Key{UP=1, LEFT, DOWN, RIGHT, FIRE};
-
-/* 5:5:5:I Color Definition */
-enum Color{
-	BLACK=0x0000,
-	WHITE=0xfffe,
-	BLUE=0x003e,
-	GREEN=0x07c0,
-	RED=0xf800
-};
-
-enum WINDOW{
- W_X_MIN=0,
- W_X_MAX=320,
- W_Y_MIN=0,
- W_Y_MAX=240
-};
-
-enum TANK_DATA{
-	TANK_TIMER=0,
-	TANK_POS_INIT_X=10,
-	TANK_POS_INIT_Y=10,
-	TANK_WIDTH=16,
-	TANK_HEIGHT=10,
-	TANK_SPEED_RATE=5,
-	TANK_FOOTSTEP=TANK_WIDTH/8,
-	TANK_DIR=3,
-	TANK_FIRED_CNT=0
-};
-
-enum UFO_DATA{
-	UFO_WIDTH=30,
-	UFO_HEIGHT=30,
-	UFO_TIMER=0,
-	UFO_SPEED_RATE=1,
-	UFO_FOOTSTEP=2,
-	UFO_DIR=3
-};
-
-enum MISSILE_DATA{
-	MISSILE_WIDTH=6,
-	MISSILE_HEIGHT=6,
-	MISSILE_TIMER=0,
-	MISSILE_SPEED_RATE=1,
-	MISSILE_FOOTSTEP=4,
-	MISSILE_DIR=3,
-	MISSILE_DEFAULT=-20
-};
 
 
-struct KEY key_seq = {NOT_PRESSED_YET, DEFAULT};
-
-struct Object Tank = {
-	TANK_TIMER,
-	1,
-	{0,10},  // 현재 탱크 위치.
-	{TANK_POS_INIT_X,TANK_POS_INIT_Y},  // 초기화시킬 시 탱크 위치.
-	{0,10},  // 탱크의 위치가 움직이게 될 때, 탱크의 위치를 벡업.
-	{TANK_WIDTH,TANK_HEIGHT}, // 탱크의 크기. 가로 15, 세로 10
-	RED,
-	TANK_SPEED_RATE,
-	TANK_FOOTSTEP,
-	0,
-	0,
-	TANK_DIR,
-	TANK_FIRED_CNT,
-	{0,0},
-	-1
-};
-
-struct Object Ufo = {
-	0,
-	1,
-	{160,300},
-	{160,300},
-	{160,300},
-	{UFO_WIDTH,UFO_HEIGHT},
-	BLUE,
-	UFO_SPEED_RATE,
-	UFO_FOOTSTEP,
-	0,
-	0,
-	0,
-	0,
-	{0,0},
-	-1
-};
-
-struct Object Missiles[5] = {
-		{
-			MISSILE_TIMER,
-			1,
-			{319,239},
-			{319,239},
-			{319,239},
-			{MISSILE_WIDTH,MISSILE_HEIGHT},
-			GREEN,
-			MISSILE_SPEED_RATE,
-			MISSILE_FOOTSTEP,
-			0,
-			0,
-			MISSILE_DIR
-		},
-		{
-			MISSILE_TIMER,
-			1,
-			{319,239},
-			{319,239},
-			{319,239},
-			{MISSILE_WIDTH,MISSILE_HEIGHT},
-			GREEN,
-			MISSILE_SPEED_RATE,
-			MISSILE_FOOTSTEP,
-			0,
-			0,
-			MISSILE_DIR
-		},
-		{
-			MISSILE_TIMER,
-			1,
-			{319,239},
-			{319,239},
-			{319,239},
-			{MISSILE_WIDTH,MISSILE_HEIGHT},
-			GREEN,
-			MISSILE_SPEED_RATE,
-			MISSILE_FOOTSTEP,
-			0,
-			0,
-			MISSILE_DIR
-		},
-		{
-			MISSILE_TIMER,
-			1,
-			{319,239},
-			{319,239},
-			{319,239},
-			{MISSILE_WIDTH,MISSILE_HEIGHT},
-			GREEN,
-			MISSILE_SPEED_RATE,
-			MISSILE_FOOTSTEP,
-			0,
-			0,
-			MISSILE_DIR
-		},
-		{
-			MISSILE_TIMER,
-			1,
-			{319,239},
-			{319,239},
-			{319,239},
-			{MISSILE_WIDTH,MISSILE_HEIGHT},
-			GREEN,
-			MISSILE_SPEED_RATE,
-			MISSILE_FOOTSTEP,
-			0,
-			0,
-			MISSILE_DIR
-		}
-};
-
-int score = 0;
 
 /* ====================================
  *  Bootstraping.
@@ -377,7 +172,6 @@ void Update_Missiles(int key)
 			}
 			if(Missiles[Tank.fired_cnt].missile_flag == NOT_FIRED){
 				Missiles[Tank.fired_cnt].missile_flag = FIRED;
-				Missiles[Tank.fired_cnt].launch_order = Tank.fired_cnt;
 
 				Missiles[Tank.fired_cnt].pos_init[X] = Tank.pos[X];
 				Missiles[Tank.fired_cnt].pos_init[Y] = Tank.pos[Y];
@@ -466,12 +260,12 @@ void Draw_Tank(void)
 {
 	// draw tank - edge cases
 	// if tank position exceed window then block
-	if((Tank.pos[X] > WINDOW_WIDTH - TANK_WIDTH - 1) ||
+	if((Tank.pos[X] > W_X_MAX - TANK_WIDTH - 1) ||
 	   (Tank.pos[X] < W_X_MIN)){
 		Tank.pos[X] = Tank.pos_back[X];
 	}
 
-	if((Tank.pos[Y] > WINDOW_HEIGHT - TANK_HEIGHT) ||
+	if((Tank.pos[Y] > W_X_MAX - TANK_HEIGHT) ||
 	   (Tank.pos[Y] < W_Y_MIN)	){
 		Tank.pos[Y] = Tank.pos_back[Y];
 	}
@@ -495,10 +289,12 @@ void Draw_Ufo(void)
 {
 	// draw ufo - edge case
 	// if ufo position off from the window, then set to beginning
-	if((Ufo.pos[Y] < W_Y_MIN))
+	if(Ufo.pos[Y] < W_Y_MIN)
 	{
 		Ufo.pos[Y] = Ufo.pos_init[Y];
-		Lcd_Draw_Bar(Ufo.pos_back[X], 0, Ufo.pos_back[X] + Ufo.size[X], 20, BG_COLOR);
+		Lcd_Draw_Bar(Ufo.pos_back[X], 0,
+					 Ufo.pos_back[X] + Ufo.size[X], 20,
+					 BG_COLOR);
 	}
 
 	// draw Ufo
@@ -506,9 +302,13 @@ void Draw_Ufo(void)
 	if(Ufo.move_flag != NOT_MOVED)
 	{
 		// remove previous state in lcd
-		Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y], Ufo.pos_back[X] + Ufo.size[X], Ufo.pos_back[Y] + Ufo.size[Y], BG_COLOR);
+		Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y],
+				     Ufo.pos_back[X] + Ufo.size[X], Ufo.pos_back[Y] + Ufo.size[Y],
+				     BG_COLOR);
 		// draw current state in lcd
-		Lcd_Draw_Bar(Ufo.pos[X], Ufo.pos[Y], Ufo.pos[X] + Ufo.size[X], Ufo.pos[Y] - Ufo.size[Y], Ufo.color);
+		Lcd_Draw_Bar(Ufo.pos[X], Ufo.pos[Y],
+					 Ufo.pos[X] + Ufo.size[X], Ufo.pos[Y] - Ufo.size[Y],
+					 Ufo.color);
 		// set to ufo flag not moved.
 		Ufo.move_flag = NOT_MOVED;
 	}
@@ -610,6 +410,10 @@ void Draw_Ufo_Crashed(void)
 }
 
 
+
+
+
+
 /* =====================================
  * print states of objects
  * =====================================
@@ -642,7 +446,7 @@ void print_missile(int i){
 	Uart_Printf("Missiles[%d] pos_back[X] %d / pos_back[Y] %d\n", i, Missiles[i].pos_back[X], Missiles[i].pos_back[Y]);
 	Uart_Printf("Missiles[%d] size[X] %d / size[Y] %d\n", i, Missiles[i].size[X], Missiles[i].size[Y]);
 	Uart_Printf("Missiles[%d] dir : %d\n", i, Missiles[i].dir);
-	Uart_Printf("Missiles[%d] launch_order : %d\n", i, Missiles[i].launch_order);
 	Uart_Printf("==================missile===============\n");
 
 }
+
