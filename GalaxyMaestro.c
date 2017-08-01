@@ -68,9 +68,11 @@ struct Object
 	int cd_flag;		  // collision detection flag
 	int dir;           // 1,2,3,4번 키를 누름에 따라 미사일의 방향이 정해진다. 차례대로, up, left, down, right
 	int fired_cnt;        // tank 객체에서 미사일이 발사된 횟수를 관리한다.
+	int fly_dir[X_COMMA_Y]; // ufo의 x,y방향을 결정.
 };
 
 struct Object Missiles[5];
+struct Object Ufos[5];
 
 enum Key{UP=1, LEFT, DOWN, RIGHT, FIRE};
 
@@ -165,6 +167,7 @@ struct Object Missile = {
 	MISSILE_DIR
 };
 
+int score = 0;
 
 /* ====================================
  *  Bootstraping.
@@ -234,6 +237,7 @@ void collision_detect(void)
 				Missile.cd_flag = OBJECT_CRASHED;
 				Ufo.cd_flag = OBJECT_CRASHED;
 
+				score++;
 		}
 	}
 }
