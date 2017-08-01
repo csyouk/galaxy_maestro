@@ -16,7 +16,7 @@
 #define MOVED 1
 #define OBJECT_NOT_CRASHED 0
 #define OBJECT_CRASHED 1
-
+#define NOT_PRESSED_YET -1
 
 /*
 terms about window edges
@@ -43,15 +43,16 @@ void Draw_Object(void);
 void Galaxy_Maestro(void);
 void Update_Tank(int);
 void Update_Ufo(void);
-void Update_Missile(int);
+void Update_Missiles(int);
 void Draw_Tank(void);
-void Draw_Missile(void);
+void Draw_Missiles(void);
 void Draw_Ufo(void);
 void Draw_Missile_Crashed(void);
 void Draw_Ufo_Crashed(void);
 void print_tank(void);
 void print_ufo(void);
-void print_missile(void);
+void print_missile(int);
+void Missile_Fire(int);
 
 struct Object
 {
@@ -69,9 +70,14 @@ struct Object
 	int dir;           // 1,2,3,4번 키를 누름에 따라 미사일의 방향이 정해진다. 차례대로, up, left, down, right
 	int fired_cnt;        // tank 객체에서 미사일이 발사된 횟수를 관리한다.
 	int fly_dir[X_COMMA_Y]; // ufo의 x,y방향을 결정.
+	int launch_order;     // 발사된 순서 저장.
 };
 
-struct Object Missiles[5];
+struct KEY {
+	char pre;
+	char cur;
+};
+
 struct Object Ufos[5];
 
 enum Key{UP=1, LEFT, DOWN, RIGHT, FIRE};
@@ -94,7 +100,7 @@ enum WINDOW{
 
 enum TANK_DATA{
 	TANK_TIMER=0,
-	TANK_POS_INIT_X=0,
+	TANK_POS_INIT_X=10,
 	TANK_POS_INIT_Y=10,
 	TANK_WIDTH=16,
 	TANK_HEIGHT=10,
@@ -103,6 +109,7 @@ enum TANK_DATA{
 	TANK_DIR=3,
 	TANK_FIRED_CNT=0
 };
+
 enum UFO_DATA{
 	UFO_WIDTH=30,
 	UFO_HEIGHT=30,
@@ -118,8 +125,12 @@ enum MISSILE_DATA{
 	MISSILE_TIMER=0,
 	MISSILE_SPEED_RATE=1,
 	MISSILE_FOOTSTEP=4,
-	MISSILE_DIR=3
+	MISSILE_DIR=3,
+	MISSILE_DEFAULT=-20
 };
+
+
+struct KEY key_seq = {NOT_PRESSED_YET, DEFAULT};
 
 struct Object Tank = {
 	TANK_TIMER,
@@ -134,7 +145,9 @@ struct Object Tank = {
 	0,
 	0,
 	TANK_DIR,
-	TANK_FIRED_CNT
+	TANK_FIRED_CNT,
+	{0,0},
+	-1
 };
 
 struct Object Ufo = {
@@ -149,22 +162,83 @@ struct Object Ufo = {
 	UFO_FOOTSTEP,
 	0,
 	0,
-	0
+	0,
+	0,
+	{0,0},
+	-1
 };
 
-struct Object Missile = {
-	MISSILE_TIMER,
-	1,
-	{319,239},
-	{319,239},
-	{319,239},
-	{MISSILE_WIDTH,MISSILE_HEIGHT},
-	GREEN,
-	MISSILE_SPEED_RATE,
-	MISSILE_FOOTSTEP,
-	0,
-	0,
-	MISSILE_DIR
+struct Object Missiles[5] = {
+		{
+			MISSILE_TIMER,
+			1,
+			{319,239},
+			{319,239},
+			{319,239},
+			{MISSILE_WIDTH,MISSILE_HEIGHT},
+			GREEN,
+			MISSILE_SPEED_RATE,
+			MISSILE_FOOTSTEP,
+			0,
+			0,
+			MISSILE_DIR
+		},
+		{
+			MISSILE_TIMER,
+			1,
+			{319,239},
+			{319,239},
+			{319,239},
+			{MISSILE_WIDTH,MISSILE_HEIGHT},
+			GREEN,
+			MISSILE_SPEED_RATE,
+			MISSILE_FOOTSTEP,
+			0,
+			0,
+			MISSILE_DIR
+		},
+		{
+			MISSILE_TIMER,
+			1,
+			{319,239},
+			{319,239},
+			{319,239},
+			{MISSILE_WIDTH,MISSILE_HEIGHT},
+			GREEN,
+			MISSILE_SPEED_RATE,
+			MISSILE_FOOTSTEP,
+			0,
+			0,
+			MISSILE_DIR
+		},
+		{
+			MISSILE_TIMER,
+			1,
+			{319,239},
+			{319,239},
+			{319,239},
+			{MISSILE_WIDTH,MISSILE_HEIGHT},
+			GREEN,
+			MISSILE_SPEED_RATE,
+			MISSILE_FOOTSTEP,
+			0,
+			0,
+			MISSILE_DIR
+		},
+		{
+			MISSILE_TIMER,
+			1,
+			{319,239},
+			{319,239},
+			{319,239},
+			{MISSILE_WIDTH,MISSILE_HEIGHT},
+			GREEN,
+			MISSILE_SPEED_RATE,
+			MISSILE_FOOTSTEP,
+			0,
+			0,
+			MISSILE_DIR
+		}
 };
 
 int score = 0;
@@ -203,41 +277,43 @@ void Galaxy_Maestro(void)
 */
 void Update_Object(void)
 {
-	int direction = DEFAULT;
+	int key = DEFAULT;
 	if(Timer0_Check_Expired())
 	{
 		// DO NOT CHANGE PROCEDURE ORDER!!!!
-		direction = Key_Get_Pressed();
+		key = Key_Get_Pressed();
 		Update_Ufo();
-		Update_Tank(direction);
-		Update_Missile(direction);
+		Update_Tank(key);
+		Update_Missiles(key);
 	}
 }
 
 
 void collision_detect(void)
 {
-	if(Missile.missile_flag != NOT_FIRED &&
-	   Missile.cd_flag == OBJECT_NOT_CRASHED)
-	{
-		if(
-			(Missile.pos[X] + MISSILE_WIDTH/2 > Ufo.pos[X]) &&
-			(Missile.pos[X] + MISSILE_WIDTH/2 < Ufo.pos[X]+Ufo.size[X]) &&
-			(Missile.pos[Y] + MISSILE_HEIGHT/2 > Ufo.pos[Y] - Ufo.size[Y]) &&
-			(Missile.pos[Y] + MISSILE_HEIGHT/2 < Ufo.pos[Y] + Ufo.size[Y] - Ufo.size[Y])
-		  )
+	int i;
+	for(i = 0; i < sizeof(Missiles)/sizeof(Missiles[0]); i++){
+		if(Missiles[i].missile_flag != NOT_FIRED &&
+				Missiles[i].cd_flag == OBJECT_NOT_CRASHED)
 		{
+			if(
+				(Missiles[i].pos[X] + MISSILE_WIDTH/2 > Ufo.pos[X]) &&
+				(Missiles[i].pos[X] + MISSILE_WIDTH/2 < Ufo.pos[X]+Ufo.size[X]) &&
+				(Missiles[i].pos[Y] + MISSILE_HEIGHT/2 > Ufo.pos[Y] - Ufo.size[Y]) &&
+				(Missiles[i].pos[Y] + MISSILE_HEIGHT/2 < Ufo.pos[Y] + Ufo.size[Y] - Ufo.size[Y])
+			  )
+			{
+					Missiles[i].move_flag = MOVED;
+					Ufo.move_flag = MOVED;
 
-				Missile.move_flag = MOVED;
-				Ufo.move_flag = MOVED;
+					Ufo.timer = ZERO;
+					Missiles[i].timer = ZERO;
 
-				Ufo.timer = ZERO;
-				Missile.timer = ZERO;
+					Missiles[i].cd_flag = OBJECT_CRASHED;
+					Ufo.cd_flag = OBJECT_CRASHED;
 
-				Missile.cd_flag = OBJECT_CRASHED;
-				Ufo.cd_flag = OBJECT_CRASHED;
-
-				score++;
+					score++;
+			}
 		}
 	}
 }
@@ -283,55 +359,71 @@ void Update_Tank(int _direction)
 }
 
 
-void Update_Missile(int _key)
+void Update_Missiles(int key)
 {
-
+	int i;
+	key_seq.cur = key;
 	int _is_missile_moving = NOT_MOVED;
-	if(!Missile.missile_flag) Missile.dir = Tank.dir;
 
-	Missile.timer++;
-
-	if(_key == FIRE) Missile.missile_flag = FIRED;
-
-	if(Missile.missile_flag == NOT_FIRED)
-	{
-		Missile.pos_init[X] = Tank.pos[X];
-		Missile.pos_init[Y] = Tank.pos[Y];
-
-		Missile.pos_back[X] = Missile.pos_init[X];
-		Missile.pos_back[Y] = Missile.pos_init[Y];
-
-		Missile.pos[X] = Missile.pos_init[X];
-		Missile.pos[Y] = Missile.pos_init[Y];
-		return;
+	for(i=0; i<sizeof(Missiles)/sizeof(Missiles[0]); i++){
+		if(!Missiles[i].missile_flag) Missiles[i].dir = Tank.dir;
+		Missiles[i].timer++;
 	}
 
-	_is_missile_moving = (Missile.missile_flag != NOT_FIRED && Missile.timer >= Missile.speed_step);
+	if(key_seq.pre == NOT_PRESSED_YET || key_seq.pre != key_seq.cur){
+		if(key == FIRE && Tank.fired_cnt < sizeof(Missiles)/sizeof(Missiles[0]) + 1) {
+			if(Tank.fired_cnt > sizeof(Missiles)/sizeof(Missiles[0])) {
+				Tank.fired_cnt = sizeof(Missiles)/sizeof(Missiles[0]);
+			}
+			if(Missiles[Tank.fired_cnt].missile_flag == NOT_FIRED){
+				Missiles[Tank.fired_cnt].missile_flag = FIRED;
+				Missiles[Tank.fired_cnt].launch_order = Tank.fired_cnt;
 
-	if(_is_missile_moving)
-	{
-		Missile.timer = ZERO;
-		Missile.move_flag = MOVED;
+				Missiles[Tank.fired_cnt].pos_init[X] = Tank.pos[X];
+				Missiles[Tank.fired_cnt].pos_init[Y] = Tank.pos[Y];
 
-		Missile.pos_back[X] = Missile.pos[X];			 // ������ ��ġ�� ������ ���´�.
-		Missile.pos_back[Y] = Missile.pos[Y];			 // ������ ��ġ�� ������ ���´�.
+				Missiles[Tank.fired_cnt].pos_back[X] = Missiles[Tank.fired_cnt].pos_init[X];
+				Missiles[Tank.fired_cnt].pos_back[Y] = Missiles[Tank.fired_cnt].pos_init[Y];
 
-		switch(Missile.dir){
-			case UP:
-				Missile.pos[Y] = Missile.pos[Y] - Missile.move_step;
-				break;
-			case LEFT:
-				Missile.pos[X] = Missile.pos[X] - Missile.move_step;
-				break;
-			case DOWN:
-				Missile.pos[Y] = Missile.pos[Y] + Missile.move_step;
-				break;
-			case RIGHT:
-				Missile.pos[X] = Missile.pos[X] + Missile.move_step;
-				break;
+				Missiles[Tank.fired_cnt].pos[X] = Missiles[Tank.fired_cnt].pos_init[X];
+				Missiles[Tank.fired_cnt].pos[Y] = Missiles[Tank.fired_cnt].pos_init[Y];
+				Tank.fired_cnt++;
+			}
+		}
+		key_seq.pre = key_seq.cur;
+	}
+
+
+	for(i=0; i < sizeof(Missiles)/sizeof(Missiles[0]); i++){
+		_is_missile_moving = (Missiles[i].missile_flag != NOT_FIRED && Missiles[i].timer >= Missiles[i].speed_step);
+
+		if(_is_missile_moving)
+		{
+//			Uart_Printf("moving\n");
+			Missiles[i].timer = ZERO;
+			Missiles[i].move_flag = MOVED;
+
+			Missiles[i].pos_back[X] = Missiles[i].pos[X];			 // ������ ��ġ�� ������ ���´�.
+			Missiles[i].pos_back[Y] = Missiles[i].pos[Y];			 // ������ ��ġ�� ������ ���´�.
+
+			switch(Missiles[i].dir){
+				case UP:
+					Missiles[i].pos[Y] = Missiles[i].pos[Y] - Missiles[i].move_step;
+					break;
+				case LEFT:
+					Missiles[i].pos[X] = Missiles[i].pos[X] - Missiles[i].move_step;
+					break;
+				case DOWN:
+					Missiles[i].pos[Y] = Missiles[i].pos[Y] + Missiles[i].move_step;
+					break;
+				case RIGHT:
+					Missiles[i].pos[X] = Missiles[i].pos[X] + Missiles[i].move_step;
+					break;
+			}
 		}
 	}
 }
+
 
 /*
 * ============================================
@@ -344,7 +436,7 @@ void Draw_Object(void)
 	// DO NOT CHANGE PROCEDURE ORDER!!!!
 	Draw_Tank();
 	Draw_Ufo();
-	Draw_Missile();
+	Draw_Missiles();
 	Check_Explosion();
 	Draw_Missile_Crashed();
 	Draw_Ufo_Crashed();
@@ -352,15 +444,20 @@ void Draw_Object(void)
 
 void Check_Explosion(void)
 {
-	if(Missile.cd_flag == OBJECT_CRASHED || Ufo.cd_flag == OBJECT_CRASHED)
-	{
-		Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], WHITE);
-		Timer4_Delay(100);
-		Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], BLUE);
-		Timer4_Delay(100);
-		Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], RED);
-		Timer4_Delay(100);
-		Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], BLACK);
+	int i;
+	for(i=0; i < sizeof(Missiles)/sizeof(Missiles[0]); i++){
+		if(Missiles[i].cd_flag == OBJECT_CRASHED || Ufo.cd_flag == OBJECT_CRASHED)
+		{
+			Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], WHITE);
+			Timer4_Delay(100);
+			Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], BLUE);
+			Timer4_Delay(100);
+			Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], RED);
+			Timer4_Delay(100);
+			Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], BLACK);
+			Tank.fired_cnt--;
+			break;
+		}
 	}
 }
 
@@ -385,12 +482,9 @@ void Draw_Tank(void)
 	{
 		// remove previous state in lcd
 		Lcd_Draw_Bar(Tank.pos_back[X], Tank.pos_back[Y], Tank.pos_back[X] + Tank.size[X], Tank.pos_back[Y] + Tank.size[Y], BG_COLOR);
-//		Uart_Printf("remove state ==>\n");
-//		print_tank();
 		// draw current state in lcd
 		Lcd_Draw_Bar(Tank.pos[X], Tank.pos[Y], Tank.pos[X] + Tank.size[X], Tank.pos[Y] + Tank.size[Y], Tank.color);
-//		Uart_Printf("draw state ==>\n");
-//		print_tank();
+
 		// set to tank flag not moved.
 		Tank.move_flag = NOT_MOVED;
 	}
@@ -420,67 +514,83 @@ void Draw_Ufo(void)
 	}
 }
 
-void Draw_Missile()
+void Draw_Missiles()
 {
-	// draw tank beam - edge case
-	// if fired beam off from the window, then set the tank beam member flag as not fired.
-	if((Missile.pos[Y] > W_Y_MAX - 1) ||
-		(Missile.pos[Y] < W_Y_MIN + 1) ||
-		(Missile.pos[X] < W_X_MIN + 1) ||
-		(Missile.pos[X] > W_X_MAX - MISSILE_WIDTH - 1))
-	{
-		Missile.missile_flag = NOT_FIRED;
-		Missile.dir = Tank.dir;
-		Lcd_Draw_Bar(
-				Missile.pos_back[X], Missile.pos_back[Y],
-				Missile.pos_back[X] + Missile.size[X], Missile.pos_back[Y] + Missile.size[Y],
-				BG_COLOR);
-		// draw current state in lcd
-		Lcd_Draw_Bar(
-				Missile.pos[X], Missile.pos[Y],
-				Missile.pos[X] + Missile.size[X], Missile.pos[Y] + Missile.size[Y],
-				BG_COLOR);
-	}
+	int i;
+	for(i=0; i<5; i++){
+		// draw tank beam - edge case
+		// if fired beam off from the window, then set the tank beam member flag as not fired.
+		if((Missiles[i].pos[Y] > W_Y_MAX - 1) ||
+			(Missiles[i].pos[Y] < W_Y_MIN - MISSILE_HEIGHT + 1) ||
+			(Missiles[i].pos[X] < W_X_MIN + 1) ||
+			(Missiles[i].pos[X] > W_X_MAX - MISSILE_WIDTH - 1))
+		{
+
+			if(Missiles[i].missile_flag == FIRED){
+				Tank.fired_cnt--;
+				Uart_Printf("cnt : %d\n", Tank.fired_cnt);
+			}
+			Missiles[i].missile_flag = NOT_FIRED;
+			Missiles[i].dir = Tank.dir;
+
+			if(Tank.fired_cnt < 0) Tank.fired_cnt=0;
+
+			Lcd_Draw_Bar(
+					Missiles[i].pos_back[X], Missiles[i].pos_back[Y],
+					Missiles[i].pos_back[X] + Missiles[i].size[X], Missiles[i].pos_back[Y] + Missiles[i].size[Y],
+					BG_COLOR);
+			// draw current state in lcd
+			Lcd_Draw_Bar(
+					Missiles[i].pos[X], Missiles[i].pos[Y],
+					Missiles[i].pos[X] + Missiles[i].size[X], Missiles[i].pos[Y] + Missiles[i].size[Y],
+					BG_COLOR);
+		}
 
 
-	// draw tank beam
-	// if tank beam moved, then flag will be enabled. after enabled, updated.
-	if(Missile.move_flag != NOT_MOVED)
-	{
-		// remove previous state in lcd
-		Lcd_Draw_Bar(
-				Missile.pos_back[X], Missile.pos_back[Y],
-				Missile.pos_back[X] + Missile.size[X], Missile.pos_back[Y] + Missile.size[Y],
-				BG_COLOR);
-		// draw current state in lcd
-		Lcd_Draw_Bar(
-				Missile.pos[X], Missile.pos[Y],
-				Missile.pos[X] + Missile.size[X], Missile.pos[Y] + Missile.size[Y],
-				Missile.color);
-		// set to tank beam flag not moved.
-		Missile.move_flag = NOT_MOVED;
+		// draw tank beam
+		// if tank beam moved, then flag will be enabled. after enabled, updated.
+		if(Missiles[i].move_flag != NOT_MOVED)
+		{
+			// remove previous state in lcd
+			Lcd_Draw_Bar(
+					Missiles[i].pos_back[X], Missiles[i].pos_back[Y],
+					Missiles[i].pos_back[X] + Missiles[i].size[X], Missiles[i].pos_back[Y] + Missiles[i].size[Y],
+					BG_COLOR);
+			// draw current state in lcd
+			Lcd_Draw_Bar(
+					Missiles[i].pos[X], Missiles[i].pos[Y],
+					Missiles[i].pos[X] + Missiles[i].size[X], Missiles[i].pos[Y] + Missiles[i].size[Y],
+					Missiles[i].color);
+			// set to tank beam flag not moved.
+			Missiles[i].move_flag = NOT_MOVED;
+		}
 	}
 }
 
 
 void Draw_Missile_Crashed(void)
 {
-	// draw tank beam object when crashed.
-	if(Missile.cd_flag == OBJECT_CRASHED)
-	{
-		// remove tank beam object, set color to black.
-		Lcd_Draw_Bar(Missile.pos[X],
-								 Missile.pos[Y],
-								 Missile.pos[X] + Missile.size[X],
-								 Missile.pos[Y] + Missile.size[Y],
-								 BG_COLOR
-							 );
-		// reverse state
-		Missile.cd_flag = OBJECT_NOT_CRASHED;
-		// set tank beam as not fired
-		Missile.missile_flag = NOT_FIRED;
+	int i;
+	for(i=0; i<sizeof(Missiles)/sizeof(Missiles[0]); i++){
+		// draw tank beam object when crashed.
+		if(Missiles[i].cd_flag == OBJECT_CRASHED)
+		{
+			// remove tank beam object, set color to black.
+			Lcd_Draw_Bar(Missiles[i].pos[X],
+					 	 Missiles[i].pos[Y],
+						 Missiles[i].pos[X] + Missiles[i].size[X],
+						 Missiles[i].pos[Y] + Missiles[i].size[Y],
+						 BG_COLOR
+					 );
+			// reverse state
+			Missiles[i].cd_flag = OBJECT_NOT_CRASHED;
+			// set tank beam as not fired
+			Missiles[i].missile_flag = NOT_FIRED;
+		}
+
 	}
 }
+
 void Draw_Ufo_Crashed(void)
 {
 	// draw ufo object when crashed.
@@ -488,10 +598,10 @@ void Draw_Ufo_Crashed(void)
 	{
 		// remove ufo object, set color to black.
 		Lcd_Draw_Bar(Ufo.pos[X], Ufo.pos[Y],
-								 Ufo.pos[X] + Ufo.size[X],
-								 Ufo.pos[Y] + Ufo.size[Y],
-								 BG_COLOR
-							 );
+					 Ufo.pos[X] + Ufo.size[X],
+					 Ufo.pos[Y] + Ufo.size[Y],
+					 BG_COLOR
+				 );
 		// reverse state
 		Ufo.cd_flag = OBJECT_NOT_CRASHED;
 		// set ufo position to beginning.
@@ -505,25 +615,34 @@ void Draw_Ufo_Crashed(void)
  * =====================================
  */
 void print_tank(void){
+	Uart_Printf("==================tank===============\n");
 	Uart_Printf("Timer : %d\n", Tank.timer);
 	Uart_Printf("move_flag : %d\n", Tank.move_flag);
 	Uart_Printf("pos[X] %d / pos[Y] %d\n", Tank.pos[X], Tank.pos[Y]);
 	Uart_Printf("pos_back[X] %d / pos_back[Y] %d\n", Tank.pos_back[X], Tank.pos_back[Y]);
 	Uart_Printf("size[X] %d / size[Y] %d\n", Tank.size[X], Tank.size[Y]);
 	Uart_Printf("tank direction %d\n", Tank.dir);
+	Uart_Printf("==================tank===============\n");
 }
 void print_ufo(void){
+	Uart_Printf("==================ufo===============\n");
 	Uart_Printf("Ufo Timer : %d\n", Ufo.timer);
 	Uart_Printf("Ufo move_flag : %d\n", Ufo.move_flag);
 	Uart_Printf("Ufo pos[X] %d / pos[Y] %d\n", Ufo.pos[X], Ufo.pos[Y]);
 	Uart_Printf("Ufo pos_back[X] %d / pos_back[Y] %d\n", Ufo.pos_back[X], Ufo.pos_back[Y]);
 	Uart_Printf("Ufo size[X] %d / size[Y] %d\n", Ufo.size[X], Ufo.size[Y]);
+	Uart_Printf("==================ufo===============\n");
 }
-void print_missile(void){
-	Uart_Printf("Missile Timer : %d\n", Missile.timer);
-	Uart_Printf("Missile move_flag : %d\n", Missile.move_flag);
-	Uart_Printf("Missile pos[X] %d / pos[Y] %d\n", Missile.pos[X], Missile.pos[Y]);
-	Uart_Printf("Missile pos_back[X] %d / pos_back[Y] %d\n", Missile.pos_back[X], Missile.pos_back[Y]);
-	Uart_Printf("Missile size[X] %d / size[Y] %d\n", Missile.size[X], Missile.size[Y]);
-	Uart_Printf("Missile dir : %d\n", Missile.dir);
+
+void print_missile(int i){
+	Uart_Printf("==================missile===============\n");
+	Uart_Printf("Missiles[%d] Timer : %d\n", i, Missiles[i].timer);
+	Uart_Printf("Missiles[%d] move_flag : %d\n", i, Missiles[i].move_flag);
+	Uart_Printf("Missiles[%d] pos[X] %d / pos[Y] %d\n", i, Missiles[i].pos[X], Missiles[i].pos[Y]);
+	Uart_Printf("Missiles[%d] pos_back[X] %d / pos_back[Y] %d\n", i, Missiles[i].pos_back[X], Missiles[i].pos_back[Y]);
+	Uart_Printf("Missiles[%d] size[X] %d / size[Y] %d\n", i, Missiles[i].size[X], Missiles[i].size[Y]);
+	Uart_Printf("Missiles[%d] dir : %d\n", i, Missiles[i].dir);
+	Uart_Printf("Missiles[%d] launch_order : %d\n", i, Missiles[i].launch_order);
+	Uart_Printf("==================missile===============\n");
+
 }
