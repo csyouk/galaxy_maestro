@@ -9,11 +9,6 @@
 #define Y 1
 #define X_COMMA_Y 2
 #define DEFAULT 0
-#define UP 1
-#define LEFT 2
-#define DOWN 3
-#define RIGHT 4
-#define FIRE 5
 #define NOT_FIRED 0
 #define FIRED 1
 #define ZERO 0
@@ -21,6 +16,7 @@
 #define MOVED 1
 #define OBJECT_NOT_CRASHED 0
 #define OBJECT_CRASHED 1
+#define UNLOCK 0
 
 
 
@@ -76,8 +72,8 @@ struct Object
 	int missile_dir;      // 1,2,3,4번 키를 누름에 따라 미사일의 방향이 정해진다. 차례대로, up, left, down, right
 };
 
+enum Key{UP=1, LEFT, DOWN, RIGHT, FIRE};
 /* 5:5:5:I Color Definition */
-
 enum Color{
 	BLACK=0x0000,
 	WHITE=0xfffe,
@@ -102,12 +98,6 @@ enum TANK_DATA{
 	TANK_SPEED_RATE=4,
 	TANK_FOOTSTEP=TANK_WIDTH/2,
 };
-int speed_step;	 	  // 이미지가 얼마나 빨리 이동되게 할 것인지.
-int move_step;		  // 이미지를 얼마나 이동시킬 것인가?
-int beam_flag;		  // beam 발사 됐는지 여부 flag
-int cd_flag;		  // collision detection flag
-int dir[X_COMMA_Y];   // x,y 방향의 방향정보. 1과 -1 값이 있다.
-int missile_dir;      // 1,2,3,4번 키를 누름에 따라 미사일의 방향이 정해진다. 차례대로, up, left, down, right
 
 struct Object Tank = {
 	TANK_TIMER,
@@ -139,6 +129,7 @@ struct Object Ufo = {
 	0,
 	{1,1}
 };
+
 struct Object Missile = {
 	0,
 	1,
@@ -154,7 +145,12 @@ struct Object Missile = {
 	{1,1}
 };
 
+int lock = UNLOCK;
 
+/* ====================================
+ *  Bootstraping.
+ * ====================================
+ */
 
 void Game_Init(void)
 {
@@ -185,14 +181,14 @@ void Galaxy_Maestro(void)
 */
 void Update_Object(void)
 {
-	int key = DEFAULT;
+	int direction = DEFAULT;
 	if(Timer0_Check_Expired())
 	{
 		// DO NOT CHANGE PROCEDURE ORDER!!!!
-		key = Key_Get_Pressed();
+		direction = Key_Get_Pressed();
 		Update_Ufo();
-		Update_Tank(key);
-		Update_Missile(key);
+		Update_Tank(direction);
+		Update_Missile(direction);
 	}
 }
 
@@ -233,53 +229,43 @@ void Update_Ufo(void)
 }
 
 
-void Update_Tank(int key)
+void Update_Tank(int _direction)
 {
 	// only key input 1~4 can pass.
-	if(key < UP || key > RIGHT) return;
+	if(_direction < UP || _direction > RIGHT) return;
 
-	switch(key){
+	Tank.pos_back[X] = Tank.pos[X];			 // ������ ��ġ�� ������ ���´�.
+	Tank.pos_back[Y] = Tank.pos[Y];			 // ������ ��ġ�� ������ ���´�.
+	Tank.missile_dir = _direction;
+
+	switch(_direction){
 		case UP:
-			Tank.pos_back[X] = Tank.pos[X];			 // ������ ��ġ�� ������ ���´�.
-			Tank.pos_back[Y] = Tank.pos[Y];			 // ������ ��ġ�� ������ ���´�.
 			Tank.pos[Y] = Tank.pos[Y] - Tank.move_step; // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
-			Tank.move_flag = MOVED;						 //
+			Tank.move_flag = MOVED;
 			break;
 		case LEFT:
-			Tank.pos_back[X] = Tank.pos[X];			 // ������ ��ġ�� ������ ���´�.
-			Tank.pos_back[Y] = Tank.pos[Y];			 // ������ ��ġ�� ������ ���´�.
 			Tank.pos[X] = Tank.pos[X] - Tank.move_step; // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
 			Tank.move_flag = MOVED;						 //
 			break;
 		case DOWN:
-			Tank.pos_back[X] = Tank.pos[X];			 // ������ ��ġ�� ������ ���´�.
-			Tank.pos_back[Y] = Tank.pos[Y];			 // ������ ��ġ�� ������ ���´�.
 			Tank.pos[Y] = Tank.pos[Y] + Tank.move_step;  // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
-			Tank.move_flag = MOVED;						 //
+			Tank.move_flag = MOVED;
 			break;
 		case RIGHT:
-			Tank.pos_back[X] = Tank.pos[X];			 // ������ ��ġ�� ������ ���´�.
-			Tank.pos_back[Y] = Tank.pos[Y];			 // ������ ��ġ�� ������ ���´�.
 			Tank.pos[X] = Tank.pos[X] + Tank.move_step;  // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
-			Tank.move_flag = MOVED;						 //
+			Tank.move_flag = MOVED;
 			break;
-		default:
-			break;
+		default: break;
 	}
 }
 
 
-void Update_Missile(int key)
+void Update_Missile(int _direction)
 {
 	Missile.timer++;
-	if(key == FIRE)
+	if(_direction == FIRE)
 	{
 		Missile.beam_flag = FIRED;
-		// useless if statement
-		// if(Missile.beam_flag == NOT_FIRED)
-		// {
-		// 	Missile.beam_flag = FIRED;
-		// }
 	}
 	if(Missile.beam_flag == NOT_FIRED)
 	{
@@ -462,6 +448,7 @@ void print_tank(void){
 	Uart_Printf("pos[X] %d / pos[Y] %d\n", Tank.pos[X], Tank.pos[Y]);
 	Uart_Printf("pos_back[X] %d / pos_back[Y] %d\n", Tank.pos_back[X], Tank.pos_back[Y]);
 	Uart_Printf("size[X] %d / size[Y] %d\n", Tank.size[X], Tank.size[Y]);
+	Uart_Printf("tank direction %d\n", Tank.missile_dir);
 }
 void print_ufo(void){
 	Uart_Printf("Timer : %d\n", Tank.timer);
