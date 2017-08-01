@@ -19,12 +19,13 @@
 
 #define printf 	Uart_Printf
 
+#define NO_OF_MISSILES sizeof(Missiles)/sizeof(Missiles[0])
 
 
 void Game_Init(void);
 void Check_Explosion(void);
 void Update_Object(void);
-void collision_detect(void);
+void Collision_Detect(void);
 void Draw_Object(void);
 void Galaxy_Maestro(void);
 void Update_Tank(int);
@@ -35,7 +36,8 @@ void Draw_Missiles(void);
 void Draw_Ufo(void);
 void Draw_Missile_Crashed(void);
 void Draw_Ufo_Crashed(void);
-
+void Remove_Prev_Frame(struct Object *obj);
+void Draw_Curr_Frame(struct Object *obj);
 
 
 /* ====================================
@@ -58,7 +60,7 @@ void Galaxy_Maestro(void)
 	for(;;)
 	{
 		Update_Object();
-		collision_detect();
+		Collision_Detect();
 		Draw_Object();
 	}
 }
@@ -84,10 +86,10 @@ void Update_Object(void)
 }
 
 
-void collision_detect(void)
+void Collision_Detect(void)
 {
 	int i;
-	for(i = 0; i < sizeof(Missiles)/sizeof(Missiles[0]); i++){
+	for(i = 0; i < NO_OF_MISSILES; i++){
 		if(Missiles[i].missile_flag != NOT_FIRED &&
 				Missiles[i].cd_flag == OBJECT_NOT_CRASHED)
 		{
@@ -160,15 +162,15 @@ void Update_Missiles(int key)
 	key_seq.cur = key;
 	int _is_missile_moving = NOT_MOVED;
 
-	for(i=0; i<sizeof(Missiles)/sizeof(Missiles[0]); i++){
+	for(i=0; i<NO_OF_MISSILES; i++){
 		if(!Missiles[i].missile_flag) Missiles[i].dir = Tank.dir;
 		Missiles[i].timer++;
 	}
 
 	if(key_seq.pre == NOT_PRESSED_YET || key_seq.pre != key_seq.cur){
-		if(key == FIRE && Tank.fired_cnt < sizeof(Missiles)/sizeof(Missiles[0]) + 1) {
-			if(Tank.fired_cnt > sizeof(Missiles)/sizeof(Missiles[0])) {
-				Tank.fired_cnt = sizeof(Missiles)/sizeof(Missiles[0]);
+		if(key == FIRE && Tank.fired_cnt < NO_OF_MISSILES + 1) {
+			if(Tank.fired_cnt > NO_OF_MISSILES) {
+				Tank.fired_cnt = NO_OF_MISSILES;
 			}
 			if(Missiles[Tank.fired_cnt].missile_flag == NOT_FIRED){
 				Missiles[Tank.fired_cnt].missile_flag = FIRED;
@@ -188,7 +190,7 @@ void Update_Missiles(int key)
 	}
 
 
-	for(i=0; i < sizeof(Missiles)/sizeof(Missiles[0]); i++){
+	for(i=0; i < NO_OF_MISSILES; i++){
 		_is_missile_moving = (Missiles[i].missile_flag != NOT_FIRED && Missiles[i].timer >= Missiles[i].speed_step);
 
 		if(_is_missile_moving)
@@ -239,7 +241,7 @@ void Draw_Object(void)
 void Check_Explosion(void)
 {
 	int i;
-	for(i=0; i < sizeof(Missiles)/sizeof(Missiles[0]); i++){
+	for(i=0; i < NO_OF_MISSILES; i++){
 		if(Missiles[i].cd_flag == OBJECT_CRASHED || Ufo.cd_flag == OBJECT_CRASHED)
 		{
 			Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], WHITE);
@@ -275,7 +277,8 @@ void Draw_Tank(void)
 	if(Tank.move_flag != NOT_MOVED)
 	{
 		// remove previous state in lcd
-		Lcd_Draw_Bar(Tank.pos_back[X], Tank.pos_back[Y], Tank.pos_back[X] + Tank.size[X], Tank.pos_back[Y] + Tank.size[Y], BG_COLOR);
+		Remove_Prev_Frame(&Tank);
+
 		// draw current state in lcd
 		Lcd_Draw_Bar(Tank.pos[X], Tank.pos[Y], Tank.pos[X] + Tank.size[X], Tank.pos[Y] + Tank.size[Y], Tank.color);
 
@@ -301,14 +304,8 @@ void Draw_Ufo(void)
 	// if tank moved, then flag will be enabled. after enabled, updated.
 	if(Ufo.move_flag != NOT_MOVED)
 	{
-		// remove previous state in lcd
-		Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y],
-				     Ufo.pos_back[X] + Ufo.size[X], Ufo.pos_back[Y] + Ufo.size[Y],
-				     BG_COLOR);
-		// draw current state in lcd
-		Lcd_Draw_Bar(Ufo.pos[X], Ufo.pos[Y],
-					 Ufo.pos[X] + Ufo.size[X], Ufo.pos[Y] - Ufo.size[Y],
-					 Ufo.color);
+		Remove_Prev_Frame(&Ufo);
+		Draw_Curr_Frame(&Ufo);
 		// set to ufo flag not moved.
 		Ufo.move_flag = NOT_MOVED;
 	}
@@ -334,16 +331,8 @@ void Draw_Missiles()
 			Missiles[i].dir = Tank.dir;
 
 			if(Tank.fired_cnt < 0) Tank.fired_cnt=0;
-
-			Lcd_Draw_Bar(
-					Missiles[i].pos_back[X], Missiles[i].pos_back[Y],
-					Missiles[i].pos_back[X] + Missiles[i].size[X], Missiles[i].pos_back[Y] + Missiles[i].size[Y],
-					BG_COLOR);
-			// draw current state in lcd
-			Lcd_Draw_Bar(
-					Missiles[i].pos[X], Missiles[i].pos[Y],
-					Missiles[i].pos[X] + Missiles[i].size[X], Missiles[i].pos[Y] + Missiles[i].size[Y],
-					BG_COLOR);
+			Remove_Prev_Frame(&Missiles[i]);
+			Draw_Curr_Missile_Frame(&Missiles[i]);
 		}
 
 
@@ -351,17 +340,8 @@ void Draw_Missiles()
 		// if tank beam moved, then flag will be enabled. after enabled, updated.
 		if(Missiles[i].move_flag != NOT_MOVED)
 		{
-			// remove previous state in lcd
-			Lcd_Draw_Bar(
-					Missiles[i].pos_back[X], Missiles[i].pos_back[Y],
-					Missiles[i].pos_back[X] + Missiles[i].size[X], Missiles[i].pos_back[Y] + Missiles[i].size[Y],
-					BG_COLOR);
-			// draw current state in lcd
-			Lcd_Draw_Bar(
-					Missiles[i].pos[X], Missiles[i].pos[Y],
-					Missiles[i].pos[X] + Missiles[i].size[X], Missiles[i].pos[Y] + Missiles[i].size[Y],
-					Missiles[i].color);
-			// set to tank beam flag not moved.
+			Remove_Prev_Frame(&Missiles[i]);
+			Draw_Curr_Missile_Frame(&Missiles[i]);
 			Missiles[i].move_flag = NOT_MOVED;
 		}
 	}
@@ -371,19 +351,16 @@ void Draw_Missiles()
 void Draw_Missile_Crashed(void)
 {
 	int i;
-	for(i=0; i<sizeof(Missiles)/sizeof(Missiles[0]); i++){
+	for(i=0; i<NO_OF_MISSILES; i++){
 		// draw tank beam object when crashed.
 		if(Missiles[i].cd_flag == OBJECT_CRASHED)
 		{
 			// remove tank beam object, set color to black.
-			Lcd_Draw_Bar(Missiles[i].pos[X],
-					 	 Missiles[i].pos[Y],
-						 Missiles[i].pos[X] + Missiles[i].size[X],
-						 Missiles[i].pos[Y] + Missiles[i].size[Y],
-						 BG_COLOR
-					 );
+			Remove_Prev_Frame(&Missiles[i]);
+
 			// reverse state
 			Missiles[i].cd_flag = OBJECT_NOT_CRASHED;
+
 			// set tank beam as not fired
 			Missiles[i].missile_flag = NOT_FIRED;
 		}
@@ -397,22 +374,47 @@ void Draw_Ufo_Crashed(void)
 	if(Ufo.cd_flag == OBJECT_CRASHED)
 	{
 		// remove ufo object, set color to black.
-		Lcd_Draw_Bar(Ufo.pos[X], Ufo.pos[Y],
-					 Ufo.pos[X] + Ufo.size[X],
-					 Ufo.pos[Y] + Ufo.size[Y],
-					 BG_COLOR
-				 );
+		Remove_Prev_Frame(&Ufo);
+
 		// reverse state
 		Ufo.cd_flag = OBJECT_NOT_CRASHED;
+
 		// set ufo position to beginning.
 		Ufo.pos[Y] = Ufo.pos_init[Y];
 	}
 }
 
 
+void Remove_Prev_Frame(struct Object *obj)
+{
+	// remove previous state in lcd
+	Lcd_Draw_Bar(
+		obj->pos_back[X],
+		obj->pos_back[Y],
+		obj->pos_back[X] + obj->size[X],
+		obj->pos_back[Y] + obj->size[Y],
+		BG_COLOR);
+}
 
+void Draw_Curr_Frame(struct Object *obj)
+{
+	Lcd_Draw_Bar(
+		obj->pos[X],
+		obj->pos[Y],
+		obj->pos[X] + obj->size[X],
+		obj->pos[Y] - obj->size[Y],
+		obj->color);
+}
 
-
+void Draw_Curr_Missile_Frame(struct Object *obj)
+{
+	Lcd_Draw_Bar(
+		obj->pos[X],
+		obj->pos[Y],
+		obj->pos[X] + obj->size[X],
+		obj->pos[Y] + obj->size[Y],
+		obj->color);
+}
 
 /* =====================================
  * print states of objects
