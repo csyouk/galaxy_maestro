@@ -8,19 +8,19 @@ void print_missile(int);
 
 struct Object
 {
-	char timer;     	 	  // 몇번 타이머를 쓸 것인지?
-	char move_flag;   	  // 움직이고 있는 상태인지 아니지,
+	short timer;     	 	  // 몇번 타이머를 쓸 것인지?
+	short move_flag;   	  // 움직이고 있는 상태인지 아니지,
 	short pos[X_COMMA_Y]; 		  // x,y
 	short pos_init[X_COMMA_Y];  	  // 초기 좌표.
 	short pos_back[X_COMMA_Y];      // 이전 좌표의 정보. 이미지를 사용할 시, 이 좌표를 토대로 이전의 이미지를 지워야함.
 	short size[X_COMMA_Y];	      // width, height
 	short color; // 나중에 이미지로 대체.
-	char speed_step;	 	  // 이미지가 얼마나 빨리 이동되게 할 것인지.
-	char move_step;		  // 이미지를 얼마나 이동시킬 것인가?
-	char missile_flag;		  // missile 발사 됐는지 여부 flag
-	char cd_flag;		  // collision detection flag
-	char dir;           // 1,2,3,4번 키를 누름에 따라 미사일의 방향이 정해진다. 차례대로, up, left, down, right
-	char fired_cnt;        // tank 객체에서 미사일이 발사된 횟수를 관리한다.
+	short speed_step;	 	  // 이미지가 얼마나 빨리 이동되게 할 것인지.
+	short move_step;		  // 이미지를 얼마나 이동시킬 것인가?
+	short missile_flag;		  // missile 발사 됐는지 여부 flag
+	short cd_flag;		  // collision detection flag
+	short dir;           // 1,2,3,4번 키를 누름에 따라 미사일의 방향이 정해진다. 차례대로, up, left, down, right
+	short fired_cnt;        // tank 객체에서 미사일이 발사된 횟수를 관리한다.
 	float fly_dir[X_COMMA_Y]; // ufo의 x,y방향을 결정.
 };
 
