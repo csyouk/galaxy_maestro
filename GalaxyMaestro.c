@@ -38,7 +38,8 @@ void Draw_Missile_Crashed(void);
 void Draw_Ufo_Crashed(void);
 void Remove_Prev_Frame(struct Object *obj);
 void Draw_Curr_Frame(struct Object *obj);
-
+void Draw_Curr_Mis_Tank_Frame(struct Object *obj);
+void Remove_Curr_Frame(struct Object *obj);
 
 /* ====================================
  *  Bootstraping.
@@ -180,6 +181,9 @@ void Update_Missiles(int key)
 
 				Missiles[Tank.fired_cnt].pos_back[X] = Missiles[Tank.fired_cnt].pos_init[X];
 				Missiles[Tank.fired_cnt].pos_back[Y] = Missiles[Tank.fired_cnt].pos_init[Y];
+
+				Missiles[Tank.fired_cnt].pos[X] = Missiles[Tank.fired_cnt].pos_init[X];
+				Missiles[Tank.fired_cnt].pos[Y] = Missiles[Tank.fired_cnt].pos_init[Y];
 				Tank.fired_cnt++;
 			}
 		}
@@ -329,7 +333,7 @@ void Draw_Missiles()
 
 			if(Tank.fired_cnt < ZERO) Tank.fired_cnt = ZERO;
 			Remove_Prev_Frame(&Missiles[i]);
-			Draw_Curr_Mis_Tank_Frame(&Missiles[i]);
+			Remove_Curr_Frame(&Missiles[i]);
 		}
 
 
@@ -390,6 +394,17 @@ void Remove_Prev_Frame(struct Object *obj)
 		obj->pos_back[Y],
 		obj->pos_back[X] + obj->size[X],
 		obj->pos_back[Y] + obj->size[Y],
+		BG_COLOR);
+}
+
+void Remove_Curr_Frame(struct Object *obj)
+{
+	// remove previous state in lcd
+	Lcd_Draw_Bar(
+		obj->pos[X],
+		obj->pos[Y],
+		obj->pos[X] + obj->size[X],
+		obj->pos[Y] + obj->size[Y],
 		BG_COLOR);
 }
 
