@@ -68,10 +68,10 @@ enum WINDOW{
 
 enum TANK_DATA{
 	TANK_TIMER=0,
-	TANK_POS_INIT_X=10,
-	TANK_POS_INIT_Y=10,
 	TANK_WIDTH=16,
 	TANK_HEIGHT=10,
+	TANK_POS_INIT_X=W_X_MAX/2 - TANK_WIDTH/2,
+	TANK_POS_INIT_Y=W_Y_MAX/2 - TANK_HEIGHT/2,
 	TANK_SPEED_RATE=5,
 	TANK_FOOTSTEP=TANK_WIDTH/8,
 	TANK_DIR=3,
@@ -107,7 +107,7 @@ struct KEY key_seq = {NOT_PRESSED_YET, DEFAULT};
 struct Object Tank = {
 	TANK_TIMER,
 	1,
-	{0,10},  // 현재 탱크 위치.
+	{W_X_MAX/2 - TANK_WIDTH/2, W_Y_MAX/2 - TANK_HEIGHT/2},  // 현재 탱크 위치.
 	{TANK_POS_INIT_X,TANK_POS_INIT_Y},  // 초기화시킬 시 탱크 위치.
 	{0,10},  // 탱크의 위치가 움직이게 될 때, 탱크의 위치를 벡업.
 	{TANK_WIDTH,TANK_HEIGHT}, // 탱크의 크기. 가로 15, 세로 10
