@@ -131,17 +131,17 @@ void Update_Tank(int _direction)
 	// only key input 1~4 can pass.
 	if(_direction < UP || _direction > RIGHT) return;
 
-	Tank.pos_back[X] = Tank.pos[X];			 // ������ ��ġ�� ������ ���´�.
-	Tank.pos_back[Y] = Tank.pos[Y];			 // ������ ��ġ�� ������ ���´�.
+	Tank.pos_back[X] = Tank.pos[X];
+	Tank.pos_back[Y] = Tank.pos[Y];
 	Tank.dir = _direction;
 	Tank.move_flag = MOVED;
 
 	switch(Tank.dir){
 		case UP:
-			Tank.pos[Y] = Tank.pos[Y] - Tank.move_step; // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
+			Tank.pos[Y] = Tank.pos[Y] - Tank.move_step; // move_step
 			break;
 		case LEFT:
-			Tank.pos[X] = Tank.pos[X] - Tank.move_step; // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
+			Tank.pos[X] = Tank.pos[X] - Tank.move_step; // move_step
 			break;
 		case DOWN:
 			Tank.pos[Y] = Tank.pos[Y] + Tank.move_step;  // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
@@ -272,7 +272,7 @@ void Draw_Tank(void)
 
 	// draw tank
 	// if tank moved, then flag will be enabled. after enabled, updated.
-	if(Tank.move_flag != NOT_MOVED) // �̹����� ����������, ���ο� ���� �׸���, �� ���� ��ǥ�� ������.
+	if(Tank.move_flag != NOT_MOVED)
 	{
 		// remove previous state in lcd
 		Lcd_Draw_Bar(Tank.pos_back[X], Tank.pos_back[Y], Tank.pos_back[X] + Tank.size[X], Tank.pos_back[Y] + Tank.size[Y], BG_COLOR);
