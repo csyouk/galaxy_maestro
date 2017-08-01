@@ -243,22 +243,24 @@ void Update_Tank(int key)
 		Tank.pos_back[Y] = Tank.pos[Y];			 // ������ ��ġ�� ������ ���´�.
 		Tank.pos[Y] = Tank.pos[Y] - Tank.move_step; // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
 		Tank.move_flag = MOVED;						 //
-		return;
+		break;
 	case LEFT:
 		Tank.pos_back[X] = Tank.pos[X];			 // ������ ��ġ�� ������ ���´�.
 		Tank.pos[X] = Tank.pos[X] - Tank.move_step; // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
 		Tank.move_flag = MOVED;						 //
-		return;
+		break;
 	case DOWN:
 		Tank.pos_back[Y] = Tank.pos[Y];			     // ������ ��ġ�� ������ ���´�.
 		Tank.pos[Y] = Tank.pos[Y] + Tank.move_step;  // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
 		Tank.move_flag = MOVED;						 //
-		return;
+		break;
 	case RIGHT:
 		Tank.pos_back[X] = Tank.pos[X];			     // ������ ��ġ�� ������ ���´�.
 		Tank.pos[X] = Tank.pos[X] + Tank.move_step;  // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
 		Tank.move_flag = MOVED;						 //
-		return;
+		break;
+	default:
+		break;
 
 }
 
