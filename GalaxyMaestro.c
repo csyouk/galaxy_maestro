@@ -237,23 +237,20 @@ void Update_Tank(int _direction)
 	Tank.pos_back[X] = Tank.pos[X];			 // ������ ��ġ�� ������ ���´�.
 	Tank.pos_back[Y] = Tank.pos[Y];			 // ������ ��ġ�� ������ ���´�.
 	Tank.missile_dir = _direction;
+	Tank.move_flag = MOVED;
 
 	switch(_direction){
 		case UP:
 			Tank.pos[Y] = Tank.pos[Y] - Tank.move_step; // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
-			Tank.move_flag = MOVED;
 			break;
 		case LEFT:
 			Tank.pos[X] = Tank.pos[X] - Tank.move_step; // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
-			Tank.move_flag = MOVED;						 //
 			break;
 		case DOWN:
 			Tank.pos[Y] = Tank.pos[Y] + Tank.move_step;  // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
-			Tank.move_flag = MOVED;
 			break;
 		case RIGHT:
 			Tank.pos[X] = Tank.pos[X] + Tank.move_step;  // move_step �̹����� �󸶳� �̵���ų ���ΰ�?
-			Tank.move_flag = MOVED;
 			break;
 		default: break;
 	}
