@@ -16,8 +16,6 @@
 #define MOVED 1
 #define OBJECT_NOT_CRASHED 0
 #define OBJECT_CRASHED 1
-#define UNLOCK 1
-
 
 
 /*
@@ -71,7 +69,10 @@ struct Object
 	int dir;           // 1,2,3,4번 키를 누름에 따라 미사일의 방향이 정해진다. 차례대로, up, left, down, right
 };
 
+struct Object Missiles[3];
+
 enum Key{UP=1, LEFT, DOWN, RIGHT, FIRE};
+
 /* 5:5:5:I Color Definition */
 enum Color{
 	BLACK=0x0000,
@@ -161,7 +162,6 @@ struct Object Missile = {
 	MISSILE_DIR
 };
 
-int lock = UNLOCK;
 
 /* ====================================
  *  Bootstraping.
@@ -220,9 +220,6 @@ void collision_detect(void)
 			if((Missile.pos[Y]  > Ufo.pos[Y]) && \
 			(Missile.pos[Y] + Missile.size[Y] < Ufo.pos[Y] + Ufo.size[Y]))
 			{
-				Uart_Printf("COOOOOOOOOOOO=\n");
-				print_ufo();
-				print_missile();
 				Missile.move_flag = MOVED;
 				Ufo.move_flag = MOVED;
 
@@ -279,6 +276,7 @@ void Update_Tank(int _direction)
 
 void Update_Missile(int _key)
 {
+
 	int _is_missile_moving = NOT_MOVED;
 	if(!Missile.missile_flag) Missile.dir = Tank.dir;
 
@@ -303,7 +301,6 @@ void Update_Missile(int _key)
 
 	if(_is_missile_moving)
 	{
-
 		Missile.timer = ZERO;
 		Missile.move_flag = MOVED;
 
