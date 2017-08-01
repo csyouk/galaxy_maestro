@@ -67,9 +67,10 @@ struct Object
 	int missile_flag;		  // missile 발사 됐는지 여부 flag
 	int cd_flag;		  // collision detection flag
 	int dir;           // 1,2,3,4번 키를 누름에 따라 미사일의 방향이 정해진다. 차례대로, up, left, down, right
+	int fired_cnt;        // tank 객체에서 미사일이 발사된 횟수를 관리한다.
 };
 
-struct Object Missiles[3];
+struct Object Missiles[5];
 
 enum Key{UP=1, LEFT, DOWN, RIGHT, FIRE};
 
@@ -97,7 +98,8 @@ enum TANK_DATA{
 	TANK_HEIGHT=10,
 	TANK_SPEED_RATE=5,
 	TANK_FOOTSTEP=TANK_WIDTH/8,
-	TANK_DIR=3
+	TANK_DIR=3,
+	TANK_FIRED_CNT=0
 };
 enum UFO_DATA{
 	UFO_WIDTH=30,
@@ -129,7 +131,8 @@ struct Object Tank = {
 	TANK_FOOTSTEP,
 	0,
 	0,
-	TANK_DIR
+	TANK_DIR,
+	TANK_FIRED_CNT
 };
 
 struct Object Ufo = {
@@ -418,25 +421,22 @@ void Draw_Missile()
 {
 	// draw tank beam - edge case
 	// if fired beam off from the window, then set the tank beam member flag as not fired.
-	if((Missile.pos[Y] > W_Y_MAX - 1))
+	if((Missile.pos[Y] > W_Y_MAX - 1) ||
+		(Missile.pos[Y] < W_Y_MIN + 1) ||
+		(Missile.pos[X] < W_X_MIN + 1) ||
+		(Missile.pos[X] > W_X_MAX - MISSILE_WIDTH - 1))
 	{
 		Missile.missile_flag = NOT_FIRED;
 		Missile.dir = Tank.dir;
-	}
-	if(Missile.pos[Y] < W_Y_MIN - MISSILE_HEIGHT + 1)
-	{
-		Missile.missile_flag = NOT_FIRED;
-		Missile.dir = Tank.dir;
-	}
-	if(Missile.pos[X] < W_X_MIN - MISSILE_WIDTH)
-	{
-		Missile.missile_flag = NOT_FIRED;
-		Missile.dir = Tank.dir;
-	}
-	if(Missile.pos[X] > W_X_MAX + MISSILE_WIDTH - 1)
-	{
-		Missile.missile_flag = NOT_FIRED;
-		Missile.dir = Tank.dir;
+		Lcd_Draw_Bar(
+				Missile.pos_back[X], Missile.pos_back[Y],
+				Missile.pos_back[X] + Missile.size[X], Missile.pos_back[Y] + Missile.size[Y],
+				BG_COLOR);
+		// draw current state in lcd
+		Lcd_Draw_Bar(
+				Missile.pos[X], Missile.pos[Y],
+				Missile.pos[X] + Missile.size[X], Missile.pos[Y] + Missile.size[Y],
+				BG_COLOR);
 	}
 
 
