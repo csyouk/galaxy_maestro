@@ -72,6 +72,8 @@ void Init_Game(void)
 	Lcd_Clr_Screen(BG_COLOR);
 	Timer0_Repeat(20);
 	Lcd_Draw_Bar(W_X_MAX, W_Y_MIN, W_F_WIDTH-1, W_F_HEIGHT, RED);
+	Lcd_Printf(W_X_MAX, MARGIN, BLACK, RED, 1, 1, "SCORE");
+	Lcd_Printf(W_X_MAX + 5*MARGIN, 5*MARGIN, BLACK, RED, 1, 1, INIT_SCORE);
 }
 
 void Init_Tank(void)
