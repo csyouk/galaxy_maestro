@@ -16,6 +16,10 @@
 #define OBJECT_CRASHED 1
 #define NOT_PRESSED_YET -1
 
+#define MARGIN 4
+
+#define INIT_SCORE "00"
+
 
 
 struct Object
@@ -93,7 +97,7 @@ enum TANK_DATA{
 	TANK_POS_INIT_X=W_X_MAX/2 - TANK_WIDTH/2,
 	TANK_POS_INIT_Y=W_Y_MAX/2 - TANK_HEIGHT/2,
 	TANK_SPEED_RATE=1,
-	TANK_FOOTSTEP=3,
+	TANK_FOOTSTEP=5,
 	TANK_DIR=3,
 	TANK_FIRED_CNT=0
 };
@@ -398,3 +402,4 @@ struct Object Ufos[10] = {
 
 
 int score = 0;
+int life = 3;
