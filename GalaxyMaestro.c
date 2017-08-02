@@ -20,9 +20,11 @@
 #define printf 	Uart_Printf
 
 #define NO_OF_MISSILES sizeof(Missiles)/sizeof(Missiles[0])
+#define NO_OF_UFOS sizeof(Ufos)/sizeof(Ufos[0])
 
 
 void Game_Init(void);
+void Ufo_Init(void);
 void Check_Explosion(void);
 void Update_Object(void);
 void Collision_Detect(void);
@@ -41,21 +43,17 @@ void Draw_Curr_Frame(struct Object *obj);
 void Draw_Curr_Mis_Tank_Frame(struct Object *obj);
 void Remove_Curr_Frame(struct Object *obj);
 
+
 /* ====================================
  *  Bootstraping.
  * ====================================
  */
 
-void Game_Init(void)
-{
-	Lcd_Clr_Screen(BG_COLOR);
-	Timer0_Repeat(20);
-}
-
 
 void Galaxy_Maestro(void)
 {
 	Game_Init();
+	Ufo_Init();
 	Draw_Object();
 
 	for(;;)
@@ -66,7 +64,35 @@ void Galaxy_Maestro(void)
 	}
 }
 
+void Game_Init(void)
+{
+	Lcd_Clr_Screen(BG_COLOR);
+	Timer0_Repeat(20);
+}
 
+void Ufo_Init(void)
+{
+	int i, position, temp;
+	for(i = ZERO; i < NO_OF_UFOS; i++){
+		position = rand()%2;
+		temp = rand()%4 - 2;
+		Ufos[i].speed_step = rand() % 3 + 1;
+		Ufos[i].move_step = rand() % 5 + 1;
+		if(position){
+			Ufos[i].pos[!position] = W_X_MIN;
+			Ufos[i].pos[position] = rand() % 240;
+
+			Ufos[i].fly_dir[!position] = (temp == 0)? 1 : temp;
+			Ufos[i].fly_dir[position] = (temp == 0)? 1 : temp;
+		} else {
+			Ufos[i].pos[position] = W_X_MAX - 1;
+			Ufos[i].pos[!position] = rand() % 240;
+
+			Ufos[i].fly_dir[position] = (temp == 0)? 1 : temp;
+			Ufos[i].fly_dir[!position] = (temp == 0)? 1 : temp;
+		}
+	}
+}
 
 
 /* ============================================
@@ -92,7 +118,7 @@ void Collision_Detect(void)
 	int i;
 	for(i = ZERO; i < NO_OF_MISSILES; i++){
 		if(Missiles[i].missile_flag != NOT_FIRED &&
-				Missiles[i].cd_flag == OBJECT_NOT_CRASHED)
+		   Missiles[i].cd_flag == OBJECT_NOT_CRASHED)
 		{
 			if(
 				(Missiles[i].pos[X] + MISSILE_WIDTH / 2 > Ufo.pos[X]) &&
@@ -119,13 +145,38 @@ void Collision_Detect(void)
 void Update_Ufo(void)
 {
 	Ufo.timer++;
-	if(Ufo.timer >= Ufo.speed_step)
-	{
-		Ufo.timer = ZERO;
-		Ufo.pos_back[Y] = Ufo.pos[Y];
-		Ufo.pos[Y] -= Ufo.move_step;
-		Ufo.move_flag = MOVED;
-	}
+
+	if(Ufo.timer < Ufo.speed_step) return;
+	Ufo.timer = ZERO;
+	Ufo.pos_back[X] = Ufo.pos[X];
+	Ufo.pos_back[Y] = Ufo.pos[Y];
+//	Ufo.pos[X] += Ufo.fly_dir[X] * Ufo.move_step;
+	Ufo.pos[Y] += Ufo.fly_dir[Y] * Ufo.move_step;
+	Ufo.move_flag = MOVED;
+
+	printf("pos x : %d\n", Ufo.pos[X]);
+	printf("pos y : %d\n", Ufo.pos[Y]);
+
+
+
+//	Ufo.fly_dir_back[X] = Ufo.fly_dir[X];
+//	Ufo.fly_dir_back[Y] = Ufo.fly_dir[Y];
+//
+//	Ufo.pos[X] += Ufo.fly_dir[X] * Ufo.move_step;
+//	Ufo.pos[Y] += Ufo.fly_dir[Y] * Ufo.move_step;
+//	Ufo.move_flag = MOVED;
+//	printf("cal ufo\n");
+//	if(Ufo.pos[X] < W_X_MIN || Ufo.pos[X] > W_X_MAX - UFO_WIDTH - 1){
+//		Ufo.fly_dir[X] = -Ufo.fly_dir[X];
+//		printf("cal ufo x\n");
+//		return;
+//	}
+//	if(Ufo.pos[Y] < W_Y_MIN || Ufo.pos[Y] > W_Y_MAX){
+//		Ufo.fly_dir[Y] = -Ufo.fly_dir[Y];
+//		printf("cal ufo Y\n");
+//		return;
+//	}
+
 }
 
 
@@ -244,13 +295,13 @@ void Check_Explosion(void)
 	for(i = ZERO; i < NO_OF_MISSILES; i++){
 		if(Missiles[i].cd_flag == OBJECT_CRASHED || Ufo.cd_flag == OBJECT_CRASHED)
 		{
-			Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], WHITE);
+			Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-UFO_DEST_BOUND, Ufo.pos_back[X] + UFO_DEST_BOUND, Ufo.pos_back[Y], WHITE);
 			Timer4_Delay(100);
-			Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], BLUE);
+			Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-UFO_DEST_BOUND, Ufo.pos_back[X] + UFO_DEST_BOUND, Ufo.pos_back[Y], BLUE);
 			Timer4_Delay(100);
-			Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], RED);
+			Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-UFO_DEST_BOUND, Ufo.pos_back[X] + UFO_DEST_BOUND, Ufo.pos_back[Y], RED);
 			Timer4_Delay(100);
-			Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-40, Ufo.pos_back[X] + 30, Ufo.pos_back[Y], BLACK);
+			Lcd_Draw_Bar(Ufo.pos_back[X], Ufo.pos_back[Y]-UFO_DEST_BOUND, Ufo.pos_back[X] + UFO_DEST_BOUND, Ufo.pos_back[Y], BLACK);
 			Tank.fired_cnt--;
 			break;
 		}
@@ -291,14 +342,17 @@ void Draw_Tank(void)
 
 void Draw_Ufo(void)
 {
+//	printf("draw ufo!\n");
 	// draw ufo - edge case
 	// if ufo position off from the window, then set to beginning
 	if(Ufo.pos[Y] < W_Y_MIN)
 	{
+//		printf("less than y min\n");
 		Ufo.pos[Y] = Ufo.pos_init[Y];
-		Lcd_Draw_Bar(Ufo.pos_back[X], 0,
-					 Ufo.pos_back[X] + Ufo.size[X], 20,
-					 BG_COLOR);
+		Remove_Prev_Frame(&Ufo);
+//		Lcd_Draw_Bar(Ufo.pos_back[X], 0,
+//					 Ufo.pos_back[X] + Ufo.size[X], 20,
+//					 BG_COLOR);
 	}
 
 	// draw Ufo
@@ -388,6 +442,7 @@ void Draw_Ufo_Crashed(void)
 
 void Remove_Prev_Frame(struct Object *obj)
 {
+//	printf("delete prev frame\n");
 	// remove previous state in lcd
 	Lcd_Draw_Bar(
 		obj->pos_back[X],
