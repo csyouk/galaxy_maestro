@@ -1,10 +1,22 @@
 #define X_AND_Y 2
 #define NOT_PRESSED_YET -1
 #define DEFAULT 0
+#define DESTROYED 1
+#define UNDESTROYED 0
+#define X 0
+#define Y 1
 
-void print_tank(void);
-void print_ufo(void);
-void print_missile(int);
+#define DEFAULT 0
+#define NOT_FIRED 0
+#define FIRED 1
+#define ZERO 0
+#define N_MOVE 0
+#define MOVE 1
+#define OBJECT_NOT_CRASHED 0
+#define OBJECT_CRASHED 1
+#define NOT_PRESSED_YET -1
+
+
 
 struct Object
 {
@@ -23,6 +35,8 @@ struct Object
 	short fired_cnt;        // tank 객체에서 미사일이 발사된 횟수를 관리한다.
 	short fly_dir[X_AND_Y]; // ufo의 x,y방향을 결정.
 	short fly_dir_back[X_AND_Y]; // ufo의 x,y방향을 결정.
+	short destroyed;              // ufo가 파괴되었는지 결정.
+	short launch_order;			// missile 발사 순서
 };
 
 
@@ -62,10 +76,13 @@ line 4 : W_Y_MAX
 
 */
 enum WINDOW{
- W_X_MIN=0,
- W_X_MAX=320,
- W_Y_MIN=0,
- W_Y_MAX=240
+	W_F_WIDTH=320,
+	W_F_HEIGHT=240,
+	W_X_MIN=0,
+	W_X_MAX=280,
+	W_Y_MIN=0,
+	W_Y_MAX=240,
+	W_DISP_WIDTH=W_F_WIDTH-W_X_MAX
 };
 
 
@@ -75,8 +92,8 @@ enum TANK_DATA{
 	TANK_HEIGHT=10,
 	TANK_POS_INIT_X=W_X_MAX/2 - TANK_WIDTH/2,
 	TANK_POS_INIT_Y=W_Y_MAX/2 - TANK_HEIGHT/2,
-	TANK_SPEED_RATE=5,
-	TANK_FOOTSTEP=TANK_WIDTH/8,
+	TANK_SPEED_RATE=1,
+	TANK_FOOTSTEP=3,
 	TANK_DIR=3,
 	TANK_FIRED_CNT=0
 };
@@ -90,6 +107,7 @@ enum UFO_DATA{
 	UFO_SPEED_RATE=2,
 	UFO_FOOTSTEP=2,
 	UFO_DIR=3,
+//	UFO_DIR_X=1,
 	UFO_DIR_X=-1,
 	UFO_DIR_Y=-2,
 	UFO_DEST_BOUND=15
