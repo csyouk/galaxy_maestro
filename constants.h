@@ -1,4 +1,4 @@
-#define X_COMMA_Y 2
+#define X_AND_Y 2
 #define NOT_PRESSED_YET -1
 #define DEFAULT 0
 
@@ -10,10 +10,10 @@ struct Object
 {
 	short timer;     	 	  // 몇번 타이머를 쓸 것인지?
 	short move_flag;   	  // 움직이고 있는 상태인지 아니지,
-	short pos[X_COMMA_Y]; 		  // x,y
-	short pos_init[X_COMMA_Y];  	  // 초기 좌표.
-	short pos_back[X_COMMA_Y];      // 이전 좌표의 정보. 이미지를 사용할 시, 이 좌표를 토대로 이전의 이미지를 지워야함.
-	short size[X_COMMA_Y];	      // width, height
+	short pos[X_AND_Y]; 		  // x,y
+	short pos_init[X_AND_Y];  	  // 초기 좌표.
+	short pos_back[X_AND_Y];      // 이전 좌표의 정보. 이미지를 사용할 시, 이 좌표를 토대로 이전의 이미지를 지워야함.
+	short size[X_AND_Y];	      // width, height
 	short color; // 나중에 이미지로 대체.
 	short speed_step;	 	  // 이미지가 얼마나 빨리 이동되게 할 것인지.
 	short move_step;		  // 이미지를 얼마나 이동시킬 것인가?
@@ -21,7 +21,8 @@ struct Object
 	short cd_flag;		  // collision detection flag
 	short dir;           // 1,2,3,4번 키를 누름에 따라 미사일의 방향이 정해진다. 차례대로, up, left, down, right
 	short fired_cnt;        // tank 객체에서 미사일이 발사된 횟수를 관리한다.
-	float fly_dir[X_COMMA_Y]; // ufo의 x,y방향을 결정.
+	short fly_dir[X_AND_Y]; // ufo의 x,y방향을 결정.
+	short fly_dir_back[X_AND_Y]; // ufo의 x,y방향을 결정.
 };
 
 
@@ -46,11 +47,13 @@ enum Color{
 /*
 terms about window edges
  ||       || ||
-|------1------|
+X------1------|
 |             |
 2             4
 |             |
 |------3------|
+
+X point : origin
 
 line 1 : W_X_MIN
 line 2 : W_Y_MIN
@@ -68,7 +71,7 @@ enum WINDOW{
 
 enum TANK_DATA{
 	TANK_TIMER=0,
-	TANK_WIDTH=16,
+	TANK_WIDTH=10,
 	TANK_HEIGHT=10,
 	TANK_POS_INIT_X=W_X_MAX/2 - TANK_WIDTH/2,
 	TANK_POS_INIT_Y=W_Y_MAX/2 - TANK_HEIGHT/2,
@@ -79,12 +82,17 @@ enum TANK_DATA{
 };
 
 enum UFO_DATA{
-	UFO_WIDTH=30,
-	UFO_HEIGHT=30,
+	UFO_WIDTH=10,
+	UFO_HEIGHT=10,
+	UFO_POS_INIT_X=120,
+	UFO_POS_INIT_Y=239,
 	UFO_TIMER=0,
-	UFO_SPEED_RATE=1,
+	UFO_SPEED_RATE=2,
 	UFO_FOOTSTEP=2,
-	UFO_DIR=3
+	UFO_DIR=3,
+	UFO_DIR_X=-1,
+	UFO_DIR_Y=-2,
+	UFO_DEST_BOUND=15
 };
 
 enum MISSILE_DATA{
@@ -97,12 +105,7 @@ enum MISSILE_DATA{
 	MISSILE_DEFAULT=-20
 };
 
-
-
-struct Object Ufos[5];
-
 struct KEY key_seq = {NOT_PRESSED_YET, DEFAULT};
-
 
 struct Object Tank = {
 	TANK_TIMER,
@@ -124,8 +127,8 @@ struct Object Tank = {
 struct Object Ufo = {
 	0,
 	1,
-	{160,300},
-	{160,300},
+	{UFO_POS_INIT_X,UFO_POS_INIT_Y},
+	{UFO_POS_INIT_X,UFO_POS_INIT_Y},
 	{160,300},
 	{UFO_WIDTH,UFO_HEIGHT},
 	BLUE,
@@ -135,7 +138,8 @@ struct Object Ufo = {
 	0,
 	0,
 	0,
-	{0,0},
+	{UFO_DIR_X,UFO_DIR_Y},
+	{1,1}
 };
 
 struct Object Missiles[5] = {
@@ -210,5 +214,89 @@ struct Object Missiles[5] = {
 			MISSILE_DIR
 		}
 };
+
+struct Object Ufos[5] = {
+		{
+			0,
+			1,
+			{160,300},
+			{160,300},
+			{160,300},
+			{UFO_WIDTH,UFO_HEIGHT},
+			BLUE,
+			UFO_SPEED_RATE,
+			UFO_FOOTSTEP,
+			0,
+			0,
+			0,
+			0,
+			{0,0},
+		},
+		{
+			0,
+			1,
+			{160,300},
+			{160,300},
+			{160,300},
+			{UFO_WIDTH,UFO_HEIGHT},
+			BLUE,
+			UFO_SPEED_RATE,
+			UFO_FOOTSTEP,
+			0,
+			0,
+			0,
+			0,
+			{0,0},
+		},
+		{
+			0,
+			1,
+			{160,300},
+			{160,300},
+			{160,300},
+			{UFO_WIDTH,UFO_HEIGHT},
+			BLUE,
+			UFO_SPEED_RATE,
+			UFO_FOOTSTEP,
+			0,
+			0,
+			0,
+			0,
+			{0,0},
+		},
+		{
+			0,
+			1,
+			{160,300},
+			{160,300},
+			{160,300},
+			{UFO_WIDTH,UFO_HEIGHT},
+			BLUE,
+			UFO_SPEED_RATE,
+			UFO_FOOTSTEP,
+			0,
+			0,
+			0,
+			0,
+			{0,0},
+		},
+		{
+			0,
+			1,
+			{160,300},
+			{160,300},
+			{160,300},
+			{UFO_WIDTH,UFO_HEIGHT},
+			BLUE,
+			UFO_SPEED_RATE,
+			UFO_FOOTSTEP,
+			0,
+			0,
+			0,
+			0,
+			{0,0},
+		}
+};
+
 
 int score = 0;
