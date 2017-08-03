@@ -1,4 +1,51 @@
 #include "./Image/intro_bob.h"
+#include "./Image/game_over.h"
+#include "./Image/finish.h"
+#include "./Image/wait.h"
+#include "./Image/next.h"
+#include "./Image/kb_0.h"
+#include "./Image/kb_1.h"
+#include "./Image/kb_2.h"
+#include "./Image/kb_3.h"
+#include "./Image/kb_4.h"
+#include "./Image/kb_5.h"
+#include "./Image/kb_6.h"
+#include "./Image/kb_7.h"
+#include "./Image/kb_8.h"
+#include "./Image/kb_9.h"
+#include "./Image/kb_10.h"
+#include "./Image/kb_11.h"
+#include "./Image/kb_12.h"
+#include "./Image/kb_13.h"
+#include "./Image/kb_14.h"
+#include "./Image/kb_15.h"
+#include "./Image/kb_16.h"
+#include "./Image/kb_17.h"
+#include "./Image/kb_18.h"
+#include "./Image/kb_19.h"
+#include "./Image/kb_20.h"
+#include "./Image/kb_21.h"
+#include "./Image/kb_22.h"
+#include "./Image/kb_23.h"
+#include "./Image/kb_24.h"
+#include "./Image/kb_25.h"
+#include "./Image/kb_26.h"
+#include "./Image/kb_27.h"
+#include "./Image/kb_28.h"
+#include "./Image/kb_29.h"
+#include "./Image/kb_30.h"
+#include "./Image/kb_31.h"
+#include "./Image/kb_32.h"
+#include "./Image/kb_33.h"
+#include "./Image/kb_34.h"
+#include "./Image/kb_35.h"
+#include "./Image/kb_36.h"
+#include "./Image/kb_37.h"
+#include "./Image/kb_38.h"
+#include "./Image/kb_39.h"
+#include "./Image/kb_40.h"
+#include "./Image/kb_41.h"
+
 
 #define X_AND_Y 2
 #define NOT_PRESSED_YET -1
@@ -16,12 +63,14 @@
 #define OBJECT_NOT_CRASHED 0
 #define OBJECT_CRASHED 1
 #define NOT_PRESSED_YET -1
+#define WAIT_TIME 2
 
 #define MARGIN 4
 
 #define FREQ 20
 
 char* conv_int_to_string(int);
+char convert_intnum_to_charnum(int);
 
 struct Object
 {
@@ -52,7 +101,7 @@ struct KEY {
 
 typedef enum {false, true} bool;
 
-enum Game{OVER, START, PENDING};
+enum Game{OVER, START};
 
 enum Key{UP=1, LEFT, DOWN, RIGHT, FIRE};
 
@@ -63,7 +112,9 @@ enum Color{
 	WHITE=0xfffe,
 	BLUE=0x003e,
 	GREEN=0x07c0,
-	RED=0xf800
+	RED=0xf800,
+	DARK_GREEN=0x534d,
+	YELLOW=0xfed9
 };
 
 /*
@@ -96,8 +147,8 @@ enum WINDOW{
 
 enum TANK_DATA{
 	TANK_TIMER=0,
-	TANK_WIDTH=30,
-	TANK_HEIGHT=30,
+	TANK_WIDTH=24,
+	TANK_HEIGHT=24,
 	TANK_POS_INIT_X=W_X_MAX/2 - TANK_WIDTH/2,
 	TANK_POS_INIT_Y=W_Y_MAX/2 - TANK_HEIGHT/2,
 	TANK_SPEED_RATE=1,
@@ -131,11 +182,18 @@ enum MISSILE_DATA{
 	MISSILE_DEFAULT=-20
 };
 
-enum STAGE{
-	STAGE_1=1,
-	STAGE_2=2,
-	STAGE_3=3
+enum STAGE_WITH_UFO{
+	GAME_OVER,
+	STAGE_1,
+	STAGE_2,
+	STAGE_3,
+	PENDING,
+	WAIT_TO_START,
+	ON_GOING,
+	FINISH
 };
+
+int ufos_in_stage[3] = {5,7,10};
 
 struct KEY key_seq = {NOT_PRESSED_YET, DEFAULT};
 
@@ -413,5 +471,9 @@ struct Object Ufos[10] = {
 
 char s_score[3]={0};
 int score = 0;
-int life = 3;
-int game_state = PENDING;
+int life = 4;
+int game_state = WAIT_TO_START;
+int num_of_ufos = 3;
+int curr_stage = ZERO;
+int curr_ufo_cnt;
+

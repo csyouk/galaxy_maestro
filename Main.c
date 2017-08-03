@@ -53,21 +53,6 @@ int RTC_Get_Time(void)
 
 }
 
-/* =========== ����� ���� ��� =========*/
-
-
-#include "./Image/img01.h"
-#include "./Image/img02.h"
-#include "./Image/img03.h"
-#include "./Image/img04.h"
-#include "./Image/img05.h"
-#include "./Image/shape.h"
-#include "./Image/perfect.h"
-
-#define BACK_COLOR 0x0000
-
-//const unsigned short * Disp[] = {img01, img02, img03, img04};
-
 void User_Main(void);
 
 void Main(void)
