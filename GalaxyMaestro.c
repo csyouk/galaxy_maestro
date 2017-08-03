@@ -10,6 +10,7 @@
 #define NO_OF_MISSILES sizeof(Missiles)/sizeof(Missiles[0])
 #define NO_OF_UFOS sizeof(Ufos)/sizeof(Ufos[0])
 
+void Stage(int stage);
 
 void Init_Game(void);
 void Init_Ufos(void);
@@ -59,17 +60,33 @@ bool is_object_in_lcd(struct Object *obj);
 
 void Galaxy_Maestro(void)
 {
+	if(game_state == OVER) return;
+
+	while(game_state){
+		Lcd_Draw_BMP(ZERO, ZERO, intro_bob);
+		Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*4/5, RED, BLACK, 2, 1, "PRESS TO START!");
+		Timer4_Delay(100);
+		Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*4/5, BLUE, BLACK, 2, 1, "PRESS TO START!");
+		Timer4_Delay(100);
+		if(Key_Get_Pressed()){
+			Stage(STAGE_1);
+		}
+
+	}
+}
+
+void Stage(int stage){
+	// 1탄
 	Init_Game();
 	Init_Tank();
 	Init_Ufos();
 	Draw_Object();
 
-	for(;;)
-	{
+	while(game_state){
 		Update_Object();
 		Collision_Detect();
 		Draw_Object();
-//		if(game_state == OVER) break;
+		if(game_state == OVER) break;
 	}
 }
 
@@ -118,8 +135,8 @@ void Init_Ufos(void)
 		Ufos[i].pos_back[X] = TWO;
 		Ufos[i].pos_back[Y] = TWO;
 		Ufos[i].destroyed = UNDESTROYED;
-		Ufos[i].pos[X] = rand() % W_X_MAX/TWO + UFO_WIDTH * TWO;
-		Ufos[i].pos[Y] = rand() % W_Y_MAX/TWO + UFO_HEIGHT * TWO;
+		Ufos[i].pos[X] = rand() % W_X_MAX/FIVE + UFO_WIDTH * TWO;
+		Ufos[i].pos[Y] = rand() % W_Y_MAX/FIVE + UFO_HEIGHT * TWO;
 		Ufos[i].fly_dir[X] = (dir_x == ZERO)? THREE : dir_x;
 		Ufos[i].fly_dir[Y] = (dir_y == ZERO)? -THREE : dir_y;
 	}
@@ -164,9 +181,7 @@ void Collision_Detect(void)
 			Ufos[i].destroyed = DESTROYED;
 
 			Tank.fired_cnt--;
-//			printf("cnt : %d\n", Tank.fired_cnt);
 			score++;
-
 		}
 
 
@@ -178,12 +193,10 @@ void Collision_Detect(void)
 			Tank.timer = ZERO;
 			Tank.cd_flag = OBJECT_CRASHED;
 			Tank.destroyed = DESTROYED;
-//			printf("tank destroyed!!\n");
 			life--;
 			if(life < ZERO) {
 				life = ZERO;
 				game_state = OVER;
-//				printf("life : %d\n", life);
 			}
 
 		}
