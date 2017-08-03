@@ -9,7 +9,6 @@
 #define DEFAULT 0
 #define NOT_FIRED 0
 #define FIRED 1
-#define ZERO 0
 #define N_MOVE 0
 #define MOVE 1
 #define OBJECT_NOT_CRASHED 0
@@ -18,9 +17,9 @@
 
 #define MARGIN 4
 
-#define INIT_SCORE "00"
+#define FREQ 20
 
-
+char* conv_int_to_string(int);
 
 struct Object
 {
@@ -49,10 +48,13 @@ struct KEY {
 	char cur;
 };
 
+typedef enum {false, true} bool;
+
+enum Game{OVER, START, PENDING};
 
 enum Key{UP=1, LEFT, DOWN, RIGHT, FIRE};
 
-
+enum Number{ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX};
 /* 5:5:5:I Color Definition */
 enum Color{
 	BLACK=0x0000,
@@ -401,5 +403,7 @@ struct Object Ufos[10] = {
 };
 
 
+char s_score[3]={0};
 int score = 0;
 int life = 3;
+int game_state = PENDING;
