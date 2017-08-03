@@ -84,11 +84,13 @@ void Galaxy_Maestro(void)
 	while(game_state){
 		if(game_state == WAIT_TO_START) {
 			Show_Intro();
-		} else {
+		}
+		if(game_state == PENDING){
 			Show_Next();
 		}
 		if(curr_stage == (STAGE_3 + 1)) return;
 		if(Key_Get_Pressed()){
+			print_game_state();
 			Show_Loading_Animation_And_Stage(curr_stage);
 			Stage_With_Ufo(ufos_in_stage[curr_stage]);
 		}
@@ -612,8 +614,9 @@ void Remove_Crashed_Tank(void)
 
 void Check_Game_State()
 {
-	if(curr_ufo_cnt >= (STAGE_3 + 1)) {
+	if(curr_stage >= (STAGE_3 + 1)) {
 		game_state=FINISH;
+		return;
 	}
 	if(curr_ufo_cnt != ZERO) return;
 	game_state=PENDING;
