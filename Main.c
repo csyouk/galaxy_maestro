@@ -66,7 +66,7 @@ int RTC_Get_Time(void)
 
 #define BACK_COLOR 0x0000
 
-const unsigned short * Disp[] = {img01, img02, img03, img04};
+//const unsigned short * Disp[] = {img01, img02, img03, img04};
 
 void User_Main(void);
 
