@@ -5,18 +5,18 @@
 
 #define BG_COLOR WHITE
 #define printf 	Uart_Printf
-#define NO_OF_MISSILES sizeof(Missiles)/sizeof(Missiles[0])
+#define NO_OF_BANANS sizeof(Bananas)/sizeof(Bananas[0])
 
 void Show_Intro(void);
 void Show_Next(void);
 void Show_Game_Over(void);
 void Show_Finish(void);
 void Show_Loading_Animation_And_Stage(int);
-void Stage_With_Ufo(int);
+void Stage_With_Minion(int);
 
 void Init_Game(void);
-void Init_Ufos(int);
-void Init_Tank(void);
+void Init_Minions(int);
+void Init_Ufo(void);
 
 void Reset_State(void);
 
@@ -26,18 +26,18 @@ void Collision_Detect(void);
 void Galaxy_Maestro(void);
 
 void Update_Object(void);
-void Update_Tank(int);
-void Update_Ufo(void);
-void Update_Missiles(int);
+void Update_Ufo(int);
+void Update_Minion(void);
+void Update_Bananas(int);
 
 void Draw_Object(void);
 void Draw_State_Disp(void);
-void Draw_Tank(void);
-void Draw_Missiles(void);
 void Draw_Ufo(void);
+void Draw_Bananas(void);
+void Draw_Minion(void);
 void Remove_Crashed_Missile(void);
+void Remove_Crashed_Minion(void);
 void Remove_Crashed_Ufo(void);
-void Remove_Crashed_Tank(void);
 
 void Draw_Curr_Frame(struct Object *obj);
 void Blinking(struct Object *obj , int color);
@@ -45,13 +45,13 @@ void Remove_Curr_Frame(struct Object *obj);
 void Remove_Prev_Frame(struct Object *obj);
 void Remove_All_Frame(struct Object *obj);
 
-void print_tank(void);
-void print_ufo(int);
-void print_missile(int);
+void print_ufo(void);
+void print_minion(int);
+void print_banana(int);
 void print_game_state(void);
 
-int Missile_In_Ufo(int);
-int Tank_In_Ufo(int j);
+int Missile_In_Minion(int);
+int Ufo_In_Minion(int j);
 
 void disp_score(char*);
 void disp_life(char*);
@@ -82,7 +82,7 @@ void Galaxy_Maestro(void)
 		return;
 	}
 
-	if(game_state == FINISH || curr_stage == NO_MORE_STAGE){
+	if(game_state == FINISH || curr_stage == THREE){
 		Show_Finish();
 		return;
 	}
@@ -94,10 +94,10 @@ void Galaxy_Maestro(void)
 		if(game_state == PENDING){
 			Show_Next();
 		}
-		if(curr_stage == NO_MORE_STAGE) return;
+		if(curr_stage == THREE) return;
 		if(Key_Get_Pressed()){
 			Show_Loading_Animation_And_Stage(curr_stage);
-			Stage_With_Ufo(ufos_in_stage[curr_stage]);
+			Stage_With_Minion(minions_in_stage[curr_stage]);
 		}
 	}
 }
@@ -167,12 +167,12 @@ void Show_Loading_Animation_And_Stage(int stage){
 	}
 }
 
-void Stage_With_Ufo(int ufo_cnt){
-	num_of_ufos = ufo_cnt;
+void Stage_With_Minion(int minion_cnt){
+	num_of_minions = minion_cnt;
 
 	Init_Game();
-	Init_Tank();
-	Init_Ufos(ufo_cnt);
+	Init_Ufo();
+	Init_Minions(minion_cnt);
 	Draw_Object();
 
 	while(game_state){
@@ -195,47 +195,47 @@ void Init_Game(void)
 	Lcd_Printf(W_X_MAX + MARGIN, MARGIN*10, YELLOW, WHITE, 1, 1, "LIFE");
 	disp_score(conv_int_to_string(score));
 	disp_life(conv_int_to_string(life));
-	curr_ufo_cnt = ufos_in_stage[curr_stage];
+	curr_minion_cnt = minions_in_stage[curr_stage];
 	game_state = (game_state == GAME_OVER) ? GAME_OVER : ON_GOING;
 }
 
-void Init_Tank(void)
+void Init_Ufo(void)
 {
-	Tank.timer = ZERO;
-	Tank.move_flag = N_MOVE;
-	Tank.pos[X] = TANK_POS_INIT_X;
-	Tank.pos[Y] = TANK_POS_INIT_Y;
-	Tank.pos_init[X] = TANK_POS_INIT_X;
-	Tank.pos_init[Y] = TANK_POS_INIT_Y;
-	Tank.pos_back[X] = TANK_POS_INIT_X;
-	Tank.pos_back[Y] = TANK_POS_INIT_Y;
-	Tank.size[X] = TANK_WIDTH;
-	Tank.size[Y] = TANK_HEIGHT;
-	Tank.color = RED;
-	Tank.speed_step = TANK_SPEED_RATE;
-	Tank.move_step =  TANK_FOOTSTEP;
-	Tank.cd_flag = OBJECT_NOT_CRASHED;
-	Tank.dir = DOWN;
-	Tank.fired_cnt = ZERO;
-	Tank.destroyed = UNDESTROYED;
+	Ufo.timer = ZERO;
+	Ufo.move_flag = N_MOVE;
+	Ufo.pos[X] = UFO_POS_INIT_X;
+	Ufo.pos[Y] = UFO_POS_INIT_Y;
+	Ufo.pos_init[X] = UFO_POS_INIT_X;
+	Ufo.pos_init[Y] = UFO_POS_INIT_Y;
+	Ufo.pos_back[X] = UFO_POS_INIT_X;
+	Ufo.pos_back[Y] = UFO_POS_INIT_Y;
+	Ufo.size[X] = UFO_WIDTH;
+	Ufo.size[Y] = UFO_HEIGHT;
+	Ufo.color = RED;
+	Ufo.speed_step = UFO_SPEED_RATE;
+	Ufo.move_step =  UFO_FOOTSTEP;
+	Ufo.cd_flag = OBJECT_NOT_CRASHED;
+	Ufo.dir = DOWN;
+	Ufo.fired_cnt = ZERO;
+	Ufo.destroyed = UNDESTROYED;
 }
 
-void Init_Ufos(int ufo_cnt)
+void Init_Minions(int minion_cnt)
 {
 	int i, dir_x, dir_y;
-	for(i = ZERO; i < num_of_ufos; i++){
+	for(i = ZERO; i < num_of_minions; i++){
 		dir_x = rand() % TWO - TWO;
 		dir_y = rand() % FIVE - TWO;
-		Ufos[i].speed_step = rand() % TWO + ONE;
-		Ufos[i].move_step = rand() % (ufo_cnt*2/3) + ONE;
-		Ufos[i].cd_flag = OBJECT_NOT_CRASHED;
-		Ufos[i].pos_back[X] = TWO;
-		Ufos[i].pos_back[Y] = TWO;
-		Ufos[i].destroyed = UNDESTROYED;
-		Ufos[i].pos[X] = rand() % W_X_MAX/FIVE + UFO_WIDTH * TWO;
-		Ufos[i].pos[Y] = rand() % W_Y_MAX/FIVE + UFO_HEIGHT * TWO;
-		Ufos[i].fly_dir[X] = (dir_x == ZERO)? THREE : dir_x;
-		Ufos[i].fly_dir[Y] = (dir_y == ZERO)? -THREE : dir_y;
+		Minions[i].speed_step = rand() % TWO + ONE;
+		Minions[i].move_step = rand() % (minion_cnt*2/3) + ONE;
+		Minions[i].cd_flag = OBJECT_NOT_CRASHED;
+		Minions[i].pos_back[X] = TWO;
+		Minions[i].pos_back[Y] = TWO;
+		Minions[i].destroyed = UNDESTROYED;
+		Minions[i].pos[X] = rand() % W_X_MAX/FIVE + MINION_WIDTH * TWO;
+		Minions[i].pos[Y] = rand() % W_Y_MAX/FIVE + MINION_HEIGHT * TWO;
+		Minions[i].fly_dir[X] = (dir_x == ZERO)? THREE : dir_x;
+		Minions[i].fly_dir[Y] = (dir_y == ZERO)? -THREE : dir_y;
 	}
 }
 
@@ -250,47 +250,49 @@ void Update_Object(void)
 	{
 		// DO NOT CHANGE PROCEDURE ORDER!!!!
 		key = Key_Get_Pressed();
-		Update_Ufo();
-		Update_Tank(key);
-		Update_Missiles(key);
+		Update_Minion();
+		Update_Ufo(key);
+		Update_Bananas(key);
 	}
 }
 
 
 void Collision_Detect(void)
 {
-	int i, crashed_missile;
+	int i, crashed_banana;
 
 
-	for(i = ZERO; i < num_of_ufos; i++){
-		// ufo(기준)와 미사일(비교대상)이 충돌했는가?
+	for(i = ZERO; i < num_of_minions; i++){
+		// minion(기준)와 미사일(비교대상)이 충돌했는가?
 		// 충돌하면 3가지 멤버의 속성을 서로 일치시켜줘야 한다.
 		// move_flag, timer, cd_flag
-		crashed_missile = Missile_In_Ufo(i);
-		if(Ufos[i].cd_flag != OBJECT_CRASHED && crashed_missile){
-			Missiles[crashed_missile-1].move_flag = N_MOVE;
-			Missiles[crashed_missile-1].timer = ZERO;
-			Missiles[crashed_missile-1].cd_flag = OBJECT_CRASHED;
+		crashed_banana = Missile_In_Minion(i);
+		if(Minions[i].cd_flag != OBJECT_CRASHED && crashed_banana){
+			Bananas[crashed_banana-1].move_flag = N_MOVE;
+			Bananas[crashed_banana-1].timer = ZERO;
+			Bananas[crashed_banana-1].cd_flag = OBJECT_CRASHED;
 
-			Ufos[i].move_flag = N_MOVE;
-			Ufos[i].timer = ZERO;
-			Ufos[i].cd_flag = OBJECT_CRASHED;
-			Ufos[i].destroyed = DESTROYED;
-			curr_ufo_cnt--;
-			Tank.fired_cnt--;
+			Minions[i].move_flag = N_MOVE;
+			Minions[i].timer = ZERO;
+			Minions[i].cd_flag = OBJECT_CRASHED;
+			Minions[i].destroyed = DESTROYED;
+			curr_minion_cnt--;
+			Ufo.fired_cnt--;
 			score++;
+			Sound_Effect(CRASHED);
 		}
 
 
-		// ufo(기준)와 탱크(비교대상)가 충돌했는가?
+		// minion(기준)와 탱크(비교대상)가 충돌했는가?
 		// 충돌하면 3가지 멤버의 속성을 서로 일치시켜줘야 한다.
 		// move_flag, timer, cd_flag
-		if(Ufos[i].cd_flag != OBJECT_CRASHED && Tank_In_Ufo(i)){
-			Tank.move_flag = N_MOVE;
-			Tank.timer = ZERO;
-			Tank.cd_flag = OBJECT_CRASHED;
-			Tank.destroyed = DESTROYED;
+		if(Minions[i].cd_flag != OBJECT_CRASHED && Ufo_In_Minion(i)){
+			Ufo.move_flag = N_MOVE;
+			Ufo.timer = ZERO;
+			Ufo.cd_flag = OBJECT_CRASHED;
+			Ufo.destroyed = DESTROYED;
 			life--;
+			Sound_Effect(CRASHED);
 			if(life < ZERO) {
 				life = ZERO;
 				game_state = GAME_OVER;
@@ -300,30 +302,30 @@ void Collision_Detect(void)
 	}
 }
 
-int Missile_In_Ufo(int j){
-	if(Ufos[j].destroyed) return OBJECT_NOT_CRASHED;
-	int crashed_missile;
-	for(crashed_missile = ZERO; crashed_missile < NO_OF_MISSILES; crashed_missile++){
-		if( (Missiles[crashed_missile].missile_flag != NOT_FIRED) &&
-			(Missiles[crashed_missile].pos[X] + MISSILE_WIDTH / 2 > Ufos[j].pos[X]) &&
-			(Missiles[crashed_missile].pos[X] + MISSILE_WIDTH / 2 < Ufos[j].pos[X] + Ufos[j].size[X]) &&
-			(Missiles[crashed_missile].pos[Y] + MISSILE_HEIGHT / 2 > Ufos[j].pos[Y]) &&
-			(Missiles[crashed_missile].pos[Y] + MISSILE_HEIGHT / 2 < Ufos[j].pos[Y] + Ufos[j].size[Y])
+int Missile_In_Minion(int j){
+	if(Minions[j].destroyed) return OBJECT_NOT_CRASHED;
+	int crashed_banana;
+	for(crashed_banana = ZERO; crashed_banana < NO_OF_BANANS; crashed_banana++){
+		if( (Bananas[crashed_banana].banana_flag != NOT_FIRED) &&
+			(Bananas[crashed_banana].pos[X] + BANANA_WIDTH / 2 > Minions[j].pos[X]) &&
+			(Bananas[crashed_banana].pos[X] + BANANA_WIDTH / 2 < Minions[j].pos[X] + Minions[j].size[X]) &&
+			(Bananas[crashed_banana].pos[Y] + BANANA_HEIGHT / 2 > Minions[j].pos[Y]) &&
+			(Bananas[crashed_banana].pos[Y] + BANANA_HEIGHT / 2 < Minions[j].pos[Y] + Minions[j].size[Y])
 		  )
 		{
-			return (crashed_missile+1);
+			return (crashed_banana+1);
 		}
 	}
 	return OBJECT_NOT_CRASHED;
 }
 
-int Tank_In_Ufo(int j){
-	if(Ufos[j].destroyed) return OBJECT_NOT_CRASHED;
+int Ufo_In_Minion(int j){
+	if(Minions[j].destroyed) return OBJECT_NOT_CRASHED;
 	if(
-		(Tank.pos[X] + Tank.size[X]/2 > Ufos[j].pos[X]) &&
-		(Tank.pos[X] + Tank.size[X]/2 < Ufos[j].pos[X] + Ufos[j].size[Y]) &&
-		(Tank.pos[Y] + Tank.size[Y]/2 > Ufos[j].pos[Y]) &&
-		(Tank.pos[Y] + Tank.size[Y]/2 < Ufos[j].pos[Y] + Ufos[j].size[Y])
+		(Ufo.pos[X] + Ufo.size[X]/2 > Minions[j].pos[X]) &&
+		(Ufo.pos[X] + Ufo.size[X]/2 < Minions[j].pos[X] + Minions[j].size[Y]) &&
+		(Ufo.pos[Y] + Ufo.size[Y]/2 > Minions[j].pos[Y]) &&
+		(Ufo.pos[Y] + Ufo.size[Y]/2 < Minions[j].pos[Y] + Minions[j].size[Y])
 
 	  )
 	{
@@ -332,126 +334,127 @@ int Tank_In_Ufo(int j){
 	return OBJECT_NOT_CRASHED;
 }
 
-void Update_Ufo(void)
+void Update_Minion(void)
 {
 	int i;
-	for(i=0; i < num_of_ufos; i++){
-		Ufos[i].timer++;
+	for(i=0; i < num_of_minions; i++){
+		Minions[i].timer++;
 
-		if(Ufos[i].timer < Ufos[i].speed_step) return;
-		Ufos[i].timer = ZERO;
-		Ufos[i].pos_back[X] = Ufos[i].pos[X];
-		Ufos[i].pos_back[Y] = Ufos[i].pos[Y];
-		Ufos[i].fly_dir_back[X] = Ufos[i].fly_dir[X];
-		Ufos[i].fly_dir_back[Y] = Ufos[i].fly_dir[Y];
-		Ufos[i].pos[X] += Ufos[i].fly_dir[X] * Ufos[i].move_step;
-		Ufos[i].pos[Y] += Ufos[i].fly_dir[Y] * Ufos[i].move_step;
-		Ufos[i].move_flag = MOVE;
+		if(Minions[i].timer < Minions[i].speed_step) return;
+		Minions[i].timer = ZERO;
+		Minions[i].pos_back[X] = Minions[i].pos[X];
+		Minions[i].pos_back[Y] = Minions[i].pos[Y];
+		Minions[i].fly_dir_back[X] = Minions[i].fly_dir[X];
+		Minions[i].fly_dir_back[Y] = Minions[i].fly_dir[Y];
+		Minions[i].pos[X] += Minions[i].fly_dir[X] * Minions[i].move_step;
+		Minions[i].pos[Y] += Minions[i].fly_dir[Y] * Minions[i].move_step;
+		Minions[i].move_flag = MOVE;
 
-		if(Ufos[i].pos[X] < W_X_MIN || Ufos[i].pos[X] > W_X_MAX - UFO_WIDTH - 1){
-			Ufos[i].fly_dir[X] = -Ufos[i].fly_dir[X];
-			Ufos[i].pos[X] = Ufos[i].pos_back[X];
+		if(Minions[i].pos[X] < W_X_MIN || Minions[i].pos[X] > W_X_MAX - MINION_WIDTH - 1){
+			Minions[i].fly_dir[X] = -Minions[i].fly_dir[X];
+			Minions[i].pos[X] = Minions[i].pos_back[X];
 			return;
 		}
 
-		if(Ufos[i].pos[Y] < W_Y_MIN + UFO_HEIGHT || Ufos[i].pos[Y] > W_Y_MAX){
-			Ufos[i].fly_dir[Y] = -Ufos[i].fly_dir[Y];
-			Ufos[i].pos[Y] = Ufos[i].pos_back[Y];
+		if(Minions[i].pos[Y] < W_Y_MIN + MINION_HEIGHT || Minions[i].pos[Y] > W_Y_MAX){
+			Minions[i].fly_dir[Y] = -Minions[i].fly_dir[Y];
+			Minions[i].pos[Y] = Minions[i].pos_back[Y];
 			return;
 		}
 	}
 }
 
 
-void Update_Tank(int _direction)
+void Update_Ufo(int _direction)
 {
 	// only key input 1~4 can pass.
 	if(_direction < UP || _direction > RIGHT) return;
 
-	Tank.pos_back[X] = Tank.pos[X];
-	Tank.pos_back[Y] = Tank.pos[Y];
-	Tank.dir = _direction;
-	Tank.move_flag = MOVE;
+	Ufo.pos_back[X] = Ufo.pos[X];
+	Ufo.pos_back[Y] = Ufo.pos[Y];
+	Ufo.dir = _direction;
+	Ufo.move_flag = MOVE;
 
-	switch(Tank.dir){
+	switch(Ufo.dir){
 		case UP:
-			Tank.pos[Y] -= Tank.move_step;
+			Ufo.pos[Y] -= Ufo.move_step;
 			break;
 		case LEFT:
-			Tank.pos[X] -= Tank.move_step;
+			Ufo.pos[X] -= Ufo.move_step;
 			break;
 		case DOWN:
-			Tank.pos[Y] += Tank.move_step;
+			Ufo.pos[Y] += Ufo.move_step;
 			break;
 		case RIGHT:
-			Tank.pos[X] += Tank.move_step;
+			Ufo.pos[X] += Ufo.move_step;
 			break;
 		default: break;
 	}
 }
 
 
-void Update_Missiles(int key)
+void Update_Bananas(int key)
 {
 	int i;
 	key_seq.cur = key;
-	int _is_missile_moving = N_MOVE;
+	int _is_banana_moving = N_MOVE;
 
-	for(i = ZERO; i<NO_OF_MISSILES; i++){
-		if(!Missiles[i].missile_flag) Missiles[i].dir = Tank.dir;
-		Missiles[i].timer++;
+	for(i = ZERO; i<NO_OF_BANANS; i++){
+		if(!Bananas[i].banana_flag) Bananas[i].dir = Ufo.dir;
+		Bananas[i].timer++;
 	}
 
 	if(key_seq.pre == NOT_PRESSED_YET || key_seq.pre != key_seq.cur){
 		if(key == FIRE &&
-			Tank.fired_cnt < NO_OF_MISSILES &&
-			Tank.pos[X] > MISSILE_WIDTH +1 &&
-			Tank.pos[X] < W_X_MAX - MISSILE_WIDTH -1) {
-			if(Tank.fired_cnt > NO_OF_MISSILES - 1) {
-				printf("exceed cnt : %d\n", Tank.fired_cnt);
-				Tank.fired_cnt = NO_OF_MISSILES - 1;
+			Ufo.fired_cnt < NO_OF_BANANS &&
+			Ufo.pos[X] > BANANA_WIDTH +1 &&
+			Ufo.pos[X] < W_X_MAX - BANANA_WIDTH -1) {
+			if(Ufo.fired_cnt > NO_OF_BANANS - 1) {
+//				printf("exceed cnt : %d\n", Ufo.fired_cnt);
+				Ufo.fired_cnt = NO_OF_BANANS - 1;
 			}
-			if(Missiles[Tank.fired_cnt].missile_flag == NOT_FIRED){
-				Missiles[Tank.fired_cnt].missile_flag = FIRED;
+			if(Bananas[Ufo.fired_cnt].banana_flag == NOT_FIRED){
+				Bananas[Ufo.fired_cnt].banana_flag = FIRED;
 
-				Missiles[Tank.fired_cnt].pos_init[X] = Tank.pos[X];
-				Missiles[Tank.fired_cnt].pos_init[Y] = Tank.pos[Y];
+				Bananas[Ufo.fired_cnt].pos_init[X] = Ufo.pos[X];
+				Bananas[Ufo.fired_cnt].pos_init[Y] = Ufo.pos[Y];
 
-				Missiles[Tank.fired_cnt].pos_back[X] = Missiles[Tank.fired_cnt].pos_init[X];
-				Missiles[Tank.fired_cnt].pos_back[Y] = Missiles[Tank.fired_cnt].pos_init[Y];
+				Bananas[Ufo.fired_cnt].pos_back[X] = Bananas[Ufo.fired_cnt].pos_init[X];
+				Bananas[Ufo.fired_cnt].pos_back[Y] = Bananas[Ufo.fired_cnt].pos_init[Y];
 
-				Missiles[Tank.fired_cnt].pos[X] = Missiles[Tank.fired_cnt].pos_init[X];
-				Missiles[Tank.fired_cnt].pos[Y] = Missiles[Tank.fired_cnt].pos_init[Y];
-				Tank.fired_cnt++;
+				Bananas[Ufo.fired_cnt].pos[X] = Bananas[Ufo.fired_cnt].pos_init[X];
+				Bananas[Ufo.fired_cnt].pos[Y] = Bananas[Ufo.fired_cnt].pos_init[Y];
+				Ufo.fired_cnt++;
+				Sound_Effect(BEEP);
 			}
 		}
 		key_seq.pre = key_seq.cur;
 	}
 
 
-	for(i = ZERO; i < NO_OF_MISSILES; i++){
-		_is_missile_moving = (Missiles[i].missile_flag != NOT_FIRED && Missiles[i].timer >= Missiles[i].speed_step);
+	for(i = ZERO; i < NO_OF_BANANS; i++){
+		_is_banana_moving = (Bananas[i].banana_flag != NOT_FIRED && Bananas[i].timer >= Bananas[i].speed_step);
 
-		if(_is_missile_moving)
+		if(_is_banana_moving)
 		{
-			Missiles[i].timer = ZERO;
-			Missiles[i].move_flag = MOVE;
+			Bananas[i].timer = ZERO;
+			Bananas[i].move_flag = MOVE;
 
-			Missiles[i].pos_back[X] = Missiles[i].pos[X];
-			Missiles[i].pos_back[Y] = Missiles[i].pos[Y];
+			Bananas[i].pos_back[X] = Bananas[i].pos[X];
+			Bananas[i].pos_back[Y] = Bananas[i].pos[Y];
 
-			switch(Missiles[i].dir){
+			switch(Bananas[i].dir){
 				case UP:
-					Missiles[i].pos[Y] -= Missiles[i].move_step;
+					Bananas[i].pos[Y] -= Bananas[i].move_step;
 					break;
 				case LEFT:
-					Missiles[i].pos[X] -= Missiles[i].move_step;
+					Bananas[i].pos[X] -= Bananas[i].move_step;
 					break;
 				case DOWN:
-					Missiles[i].pos[Y] += Missiles[i].move_step;
+					Bananas[i].pos[Y] += Bananas[i].move_step;
 					break;
 				case RIGHT:
-					Missiles[i].pos[X] += Missiles[i].move_step;
+					Bananas[i].pos[X] += Bananas[i].move_step;
 					break;
 			}
 		}
@@ -469,13 +472,13 @@ void Draw_Object(void)
 {
 	// DO NOT CHANGE PROCEDURE ORDER!!!!
 	Draw_State_Disp();
-	Draw_Tank();
 	Draw_Ufo();
-	Draw_Missiles();
+	Draw_Minion();
+	Draw_Bananas();
 //	Check_Explosion();
 	Remove_Crashed_Missile();
+	Remove_Crashed_Minion();
 	Remove_Crashed_Ufo();
-	Remove_Crashed_Tank();
 }
 
 void Draw_State_Disp(void)
@@ -485,106 +488,106 @@ void Draw_State_Disp(void)
 	disp_score(conv_int_to_string(score));
 }
 
-void Draw_Tank(void)
-{
-	// draw tank - edge cases
-	// if tank position exceed window then block
-	if((Tank.pos[X] > W_X_MAX - TANK_WIDTH - 1) ||
-	   (Tank.pos[X] < W_X_MIN) ||
-	   (Tank.pos[Y] > W_Y_MAX - TANK_HEIGHT) ||
-	   (Tank.pos[Y] < W_Y_MIN + 1))
-	{
-		Tank.pos[X] = Tank.pos_back[X];
-		Tank.pos[Y] = Tank.pos_back[Y];
-	}
-
-	// draw tank
-	if(Tank.move_flag != N_MOVE)
-	{
-//		Remove_Prev_Frame(&Tank);
-		Lcd_Draw_BMP(Tank.pos_back[X],Tank.pos_back[Y], trace);
-		Tank.move_flag = N_MOVE;
-	}
-
-//	Draw_Curr_Frame(&Tank);
-	Lcd_Draw_BMP(Tank.pos[X],Tank.pos[Y], tank_);
-}
-
-
 void Draw_Ufo(void)
 {
+	// draw ufo - edge cases
+	// if ufo position exceed window then block
+	if((Ufo.pos[X] > W_X_MAX - UFO_WIDTH - 1) ||
+	   (Ufo.pos[X] < W_X_MIN) ||
+	   (Ufo.pos[Y] > W_Y_MAX - UFO_HEIGHT) ||
+	   (Ufo.pos[Y] < W_Y_MIN + 1))
+	{
+		Ufo.pos[X] = Ufo.pos_back[X];
+		Ufo.pos[Y] = Ufo.pos_back[Y];
+	}
+
+	// draw ufo
+	if(Ufo.move_flag != N_MOVE)
+	{
+//		Remove_Prev_Frame(&Ufo);
+		Lcd_Draw_BMP(Ufo.pos_back[X],Ufo.pos_back[Y], trace);
+		Ufo.move_flag = N_MOVE;
+	}
+
+//	Draw_Curr_Frame(&Ufo);
+	Lcd_Draw_BMP(Ufo.pos[X], Ufo.pos[Y], ufo_ico);
+}
+
+
+void Draw_Minion(void)
+{
 	int i;
-	for(i=0; i < num_of_ufos; i++){
-		if( Ufos[i].pos[X] > W_X_MAX - UFO_WIDTH - 1 ||
-			Ufos[i].pos[X] < W_X_MIN + 1 ||
-			Ufos[i].pos[Y] > W_Y_MAX ||
-			Ufos[i].pos[Y] < W_Y_MIN - UFO_HEIGHT)
+	for(i=0; i < num_of_minions; i++){
+		if( Minions[i].pos[X] > W_X_MAX - MINION_WIDTH - 1 ||
+			Minions[i].pos[X] < W_X_MIN + 1 ||
+			Minions[i].pos[Y] > W_Y_MAX ||
+			Minions[i].pos[Y] < W_Y_MIN - MINION_HEIGHT)
 		{
-			Ufos[i].pos[Y] = Ufos[i].pos_back[Y];
-//			Remove_Prev_Frame(&Ufos[i]);
-			Lcd_Draw_BMP(Ufos[i].pos_back[X], Ufos[i].pos_back[Y], trace);
+			Minions[i].pos[Y] = Minions[i].pos_back[Y];
+//			Remove_Prev_Frame(&Minions[i]);
+			Lcd_Draw_BMP(Minions[i].pos_back[X], Minions[i].pos_back[Y], trace);
 		}
 
-		// draw Ufo
-		if(Ufos[i].move_flag != N_MOVE &&
-		   Ufos[i].cd_flag == OBJECT_NOT_CRASHED &&
-		   Ufos[i].destroyed == UNDESTROYED)
+		// draw Minion
+		if(Minions[i].move_flag != N_MOVE &&
+		   Minions[i].cd_flag == OBJECT_NOT_CRASHED &&
+		   Minions[i].destroyed == UNDESTROYED)
 		{
-//			ufo가 충돌없이 움직이고 있는 상태.
+//			minion가 충돌없이 움직이고 있는 상태.
 
-			Lcd_Draw_BMP(Ufos[i].pos_back[X], Ufos[i].pos_back[Y], trace);
-			Lcd_Draw_BMP(Ufos[i].pos[X],Ufos[i].pos[Y], bob);
-			//			Remove_Prev_Frame(&Ufos[i]);
-			//			Draw_Curr_Frame(&Ufos[i]);
+			Lcd_Draw_BMP(Minions[i].pos_back[X], Minions[i].pos_back[Y], trace);
+			Lcd_Draw_BMP(Minions[i].pos[X],Minions[i].pos[Y], bob);
+			//			Remove_Prev_Frame(&Minions[i]);
+			//			Draw_Curr_Frame(&Minions[i]);
 
 		}
 
 	}
 }
 
-void Draw_Missiles()
+void Draw_Bananas()
 {
 	int i;
-	for(i = ZERO; i < NO_OF_MISSILES; i++){
-		// draw tank beam - edge case
-		// if fired beam off from the window, then set the tank beam member flag as not fired.
+	for(i = ZERO; i < NO_OF_BANANS; i++){
+		// draw ufo beam - edge case
+		// if fired beam off from the window, then set the ufo beam member flag as not fired.
 		if(
-		    (Missiles[i].pos[Y] > W_Y_MAX - MISSILE_HEIGHT) ||
-			(Missiles[i].pos[Y] < W_Y_MIN - MISSILE_HEIGHT) ||
-			(Missiles[i].pos[X] < W_X_MIN + MISSILE_WIDTH) ||
-			(Missiles[i].pos[X] > W_X_MAX - MISSILE_WIDTH*2 - 1)
+		    (Bananas[i].pos[Y] > W_Y_MAX - BANANA_HEIGHT) ||
+			(Bananas[i].pos[Y] < W_Y_MIN - BANANA_HEIGHT) ||
+			(Bananas[i].pos[X] < W_X_MIN + BANANA_WIDTH) ||
+			(Bananas[i].pos[X] > W_X_MAX - BANANA_WIDTH*2 - 1)
 			)
 		{
-			if(Missiles[i].missile_flag == FIRED){
-				Missiles[i].move_flag = N_MOVE;
-				Tank.fired_cnt--;
-				printf("cnt : %d\n", Tank.fired_cnt);
+			if(Bananas[i].banana_flag == FIRED){
+				Bananas[i].move_flag = N_MOVE;
+				Ufo.fired_cnt--;
+//				printf("cnt : %d\n", Ufo.fired_cnt);
 			}
-			Missiles[i].missile_flag = NOT_FIRED;
-			Missiles[i].dir = Tank.dir;
+			Bananas[i].banana_flag = NOT_FIRED;
+			Bananas[i].dir = Ufo.dir;
 
-			if(Tank.fired_cnt < ZERO) Tank.fired_cnt = ZERO;
-//			Remove_All_Frame(&Missiles[i]);
-			Lcd_Draw_BMP(Missiles[i].pos_back[X],Missiles[i].pos_back[Y],trace);
-			Lcd_Draw_BMP(Missiles[i].pos[X],Missiles[i].pos[Y],trace);
+			if(Ufo.fired_cnt < ZERO) Ufo.fired_cnt = ZERO;
+//			Remove_All_Frame(&Bananas[i]);
+			Lcd_Draw_BMP(Bananas[i].pos_back[X],Bananas[i].pos_back[Y],trace);
+			Lcd_Draw_BMP(Bananas[i].pos[X],Bananas[i].pos[Y],trace);
 		}
 
 
-		// draw tank beam
-		if(Missiles[i].move_flag != N_MOVE)
+		// draw ufo beam
+		if(Bananas[i].move_flag != N_MOVE)
 		{
 			// not crashed case
-//			Remove_Prev_Frame(&Missiles[i]);
-//			Draw_Curr_Frame(&Missiles[i]);
-			Lcd_Draw_BMP(Missiles[i].pos_back[X],Missiles[i].pos_back[Y],trace);
-			Lcd_Draw_BMP(Missiles[i].pos[X],Missiles[i].pos[Y],banana);
-			Missiles[i].move_flag = N_MOVE;
+//			Remove_Prev_Frame(&Bananas[i]);
+//			Draw_Curr_Frame(&Bananas[i]);
+			Lcd_Draw_BMP(Bananas[i].pos_back[X],Bananas[i].pos_back[Y],trace);
+			Lcd_Draw_BMP(Bananas[i].pos[X],Bananas[i].pos[Y],banana);
+			Bananas[i].move_flag = N_MOVE;
 		}
-		if(Missiles[i].cd_flag != OBJECT_NOT_CRASHED){
+		if(Bananas[i].cd_flag != OBJECT_NOT_CRASHED){
 			// crashed case
-//			Remove_All_Frame(&Missiles[i]);
-			Lcd_Draw_BMP(Missiles[i].pos_back[X],Missiles[i].pos_back[Y],trace);
-			Lcd_Draw_BMP(Missiles[i].pos[X],Missiles[i].pos[Y],trace);
+//			Remove_All_Frame(&Bananas[i]);
+			Lcd_Draw_BMP(Bananas[i].pos_back[X],Bananas[i].pos_back[Y],trace);
+			Lcd_Draw_BMP(Bananas[i].pos[X],Bananas[i].pos[Y],trace);
 
 		}
 	}
@@ -594,12 +597,12 @@ void Draw_Missiles()
 void Check_Explosion(void)
 {
 	int i;
-	for(i = ZERO; i < num_of_ufos; i++){
-		if(Ufos[i].destroyed && Ufos[i].cd_flag){
-			Blinking(&Ufos[i], WHITE);
-			Blinking(&Ufos[i], BLUE);
-			Blinking(&Ufos[i], RED);
-			Blinking(&Ufos[i], BLACK);
+	for(i = ZERO; i < num_of_minions; i++){
+		if(Minions[i].destroyed && Minions[i].cd_flag){
+			Blinking(&Minions[i], WHITE);
+			Blinking(&Minions[i], BLUE);
+			Blinking(&Minions[i], RED);
+			Blinking(&Minions[i], BLACK);
 		}
 	}
 }
@@ -607,68 +610,68 @@ void Check_Explosion(void)
 void Remove_Crashed_Missile(void)
 {
 	int i;
-	for(i = ZERO; i < NO_OF_MISSILES; i++){
-		// draw tank beam object when crashed.
-		if(Missiles[i].cd_flag == OBJECT_CRASHED)
+	for(i = ZERO; i < NO_OF_BANANS; i++){
+		// draw ufo beam object when crashed.
+		if(Bananas[i].cd_flag == OBJECT_CRASHED)
 		{
-//			Remove_Prev_Frame(&Missiles[i]);
-			Lcd_Draw_BMP(Missiles[i].pos_back[X],Missiles[i].pos_back[Y],trace);
+//			Remove_Prev_Frame(&Bananas[i]);
+			Lcd_Draw_BMP(Bananas[i].pos_back[X],Bananas[i].pos_back[Y],trace);
 
 			// reverse state
-			Missiles[i].cd_flag = OBJECT_NOT_CRASHED;
+			Bananas[i].cd_flag = OBJECT_NOT_CRASHED;
 
-			// set tank beam as not fired
-			Missiles[i].missile_flag = NOT_FIRED;
+			// set ufo beam as not fired
+			Bananas[i].banana_flag = NOT_FIRED;
 		}
 
+	}
+}
+
+void Remove_Crashed_Minion(void)
+{
+	int i;
+	for(i = 0; i < num_of_minions; i++){
+		// remove minion object when crashed.
+		if(Minions[i].cd_flag)
+		{
+//			Remove_All_Frame(&Minions[i]);
+			Lcd_Draw_BMP(Minions[i].pos_back[X],Minions[i].pos_back[Y],trace);
+			Lcd_Draw_BMP(Minions[i].pos[X],Minions[i].pos[Y],trace);
+			Minions[i].cd_flag = !Minions[i].cd_flag;
+		}
+
+		if(Minions[i].move_flag == N_MOVE && Minions[i].destroyed == DESTROYED ){
+			// minion가 충돌한 상태.
+			Minions[i].move_flag = N_MOVE;
+//			Remove_All_Frame(&Minions[i]);
+			Lcd_Draw_BMP(Minions[i].pos_back[X],Minions[i].pos_back[Y],trace);
+			Lcd_Draw_BMP(Minions[i].pos[X],Minions[i].pos[Y],trace);
+		}
 	}
 }
 
 void Remove_Crashed_Ufo(void)
 {
-	int i;
-	for(i = 0; i < num_of_ufos; i++){
-		// remove ufo object when crashed.
-		if(Ufos[i].cd_flag)
-		{
-//			Remove_All_Frame(&Ufos[i]);
-			Lcd_Draw_BMP(Ufos[i].pos_back[X],Ufos[i].pos_back[Y],trace);
-			Lcd_Draw_BMP(Ufos[i].pos[X],Ufos[i].pos[Y],trace);
-			Ufos[i].cd_flag = !Ufos[i].cd_flag;
-		}
-
-		if(Ufos[i].move_flag == N_MOVE && Ufos[i].destroyed == DESTROYED ){
-			// ufo가 충돌한 상태.
-			Ufos[i].move_flag = N_MOVE;
-//			Remove_All_Frame(&Ufos[i]);
-			Lcd_Draw_BMP(Ufos[i].pos_back[X],Ufos[i].pos_back[Y],trace);
-			Lcd_Draw_BMP(Ufos[i].pos[X],Ufos[i].pos[Y],trace);
-		}
-	}
-}
-
-void Remove_Crashed_Tank(void)
-{
-	if(Tank.destroyed){
-		Remove_All_Frame(&Tank);
-		Lcd_Draw_BMP(Tank.pos_back[X],Tank.pos_back[Y], trace);
-		Lcd_Draw_BMP(Tank.pos[X],Tank.pos[Y], trace);
-		Init_Tank();
+	if(Ufo.destroyed){
+//		Remove_All_Frame(&Ufo);
+		Lcd_Draw_BMP(Ufo.pos_back[X],Ufo.pos_back[Y], trace);
+		Lcd_Draw_BMP(Ufo.pos[X],Ufo.pos[Y], trace);
+		Init_Ufo();
 	}
 }
 
 
 void Check_Game_State()
 {
-	if(curr_ufo_cnt != ZERO) return;
+	if(curr_minion_cnt != ZERO) return;
 	if(curr_stage >= NO_MORE_STAGE) {
-		game_state=FINISH;
+		game_state = FINISH;
 		return;
 	}
-	game_state=PENDING;
+	game_state = PENDING;
 	curr_stage++;
-	if(curr_stage > STAGE_3){
-		game_state=FINISH;
+	if(curr_stage == NO_MORE_STAGE){
+		game_state = FINISH;
 	}
 }
 
@@ -679,7 +682,7 @@ void Reset_State()
 	score = ZERO;
 	life = 4;
 	curr_stage = ZERO;
-	curr_ufo_cnt = num_of_ufos = ufos_in_stage[curr_stage];
+	curr_minion_cnt = num_of_minions = minions_in_stage[curr_stage];
 }
 /* =====================================
  * check edge cases
@@ -793,41 +796,41 @@ void Blinking(struct Object *obj , int color)
  * print states of objects
  * =====================================
  */
-void print_tank(void){
-	printf("==================tank===============\n");
-	printf("Timer : %d\n", Tank.timer);
-	printf("move_flag : %d\n", Tank.move_flag);
-	printf("pos[X] %d / pos[Y] %d\n", Tank.pos[X], Tank.pos[Y]);
-	printf("pos_back[X] %d / pos_back[Y] %d\n", Tank.pos_back[X], Tank.pos_back[Y]);
-	printf("size[X] %d / size[Y] %d\n", Tank.size[X], Tank.size[Y]);
-	printf("tank direction %d\n", Tank.dir);
-}
-void print_ufo(int i){
+void print_ufo(void){
 	printf("==================ufo===============\n");
-	printf("Ufo Timer : %d\n", Ufos[i].timer);
-	printf("Ufo move_flag : %d\n", Ufos[i].move_flag);
-	printf("Ufo cd_flag : %d\n", Ufos[i].cd_flag);
-	printf("Ufo pos[X] %d / pos[Y] %d\n", Ufos[i].pos[X], Ufos[i].pos[Y]);
-	printf("Ufo pos_back[X] %d / pos_back[Y] %d\n", Ufos[i].pos_back[X], Ufos[i].pos_back[Y]);
-	printf("Ufo size[X] %d / size[Y] %d\n", Ufos[i].size[X], Ufos[i].size[Y]);
-	printf("Ufo fly_dir[X] %d / fly_di[Y] %d\n", Ufos[i].fly_dir[X], Ufos[i].fly_dir[Y]);
+	printf("Timer : %d\n", Ufo.timer);
+	printf("move_flag : %d\n", Ufo.move_flag);
+	printf("pos[X] %d / pos[Y] %d\n", Ufo.pos[X], Ufo.pos[Y]);
+	printf("pos_back[X] %d / pos_back[Y] %d\n", Ufo.pos_back[X], Ufo.pos_back[Y]);
+	printf("size[X] %d / size[Y] %d\n", Ufo.size[X], Ufo.size[Y]);
+	printf("ufo direction %d\n", Ufo.dir);
+}
+void print_minion(int i){
+	printf("==================minion===============\n");
+	printf("Minion Timer : %d\n", Minions[i].timer);
+	printf("Minion move_flag : %d\n", Minions[i].move_flag);
+	printf("Minion cd_flag : %d\n", Minions[i].cd_flag);
+	printf("Minion pos[X] %d / pos[Y] %d\n", Minions[i].pos[X], Minions[i].pos[Y]);
+	printf("Minion pos_back[X] %d / pos_back[Y] %d\n", Minions[i].pos_back[X], Minions[i].pos_back[Y]);
+	printf("Minion size[X] %d / size[Y] %d\n", Minions[i].size[X], Minions[i].size[Y]);
+	printf("Minion fly_dir[X] %d / fly_di[Y] %d\n", Minions[i].fly_dir[X], Minions[i].fly_dir[Y]);
 }
 
-void print_missile(int i){
-	printf("==================missile===============\n");
-	printf("Missiles[%d] Timer : %d\n", i, Missiles[i].timer);
-	printf("Missiles[%d] move_flag : %d\n", i, Missiles[i].move_flag);
-	printf("Missiles[%d] pos[X] %d / pos[Y] %d\n", i, Missiles[i].pos[X], Missiles[i].pos[Y]);
-	printf("Missiles[%d] pos_back[X] %d / pos_back[Y] %d\n", i, Missiles[i].pos_back[X], Missiles[i].pos_back[Y]);
-	printf("Missiles[%d] size[X] %d / size[Y] %d\n", i, Missiles[i].size[X], Missiles[i].size[Y]);
-	printf("Missiles[%d] dir : %d\n", i, Missiles[i].dir);
+void print_banana(int i){
+	printf("==================banana===============\n");
+	printf("Bananas[%d] Timer : %d\n", i, Bananas[i].timer);
+	printf("Bananas[%d] move_flag : %d\n", i, Bananas[i].move_flag);
+	printf("Bananas[%d] pos[X] %d / pos[Y] %d\n", i, Bananas[i].pos[X], Bananas[i].pos[Y]);
+	printf("Bananas[%d] pos_back[X] %d / pos_back[Y] %d\n", i, Bananas[i].pos_back[X], Bananas[i].pos_back[Y]);
+	printf("Bananas[%d] size[X] %d / size[Y] %d\n", i, Bananas[i].size[X], Bananas[i].size[Y]);
+	printf("Bananas[%d] dir : %d\n", i, Bananas[i].dir);
 }
 
 void print_game_state(){
 	printf("game_state : %d\n", game_state);
-	printf("num of ufo : %d\n", num_of_ufos);
+	printf("num of minion : %d\n", num_of_minions);
 	printf("curr stage : %d\n", curr_stage + 1);
-	printf("curr ufo cnt : %d\n", curr_ufo_cnt);
+	printf("curr minion cnt : %d\n", curr_minion_cnt);
 }
 
 /* =====================================

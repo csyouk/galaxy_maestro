@@ -16,7 +16,7 @@ void Timer3_Buzzer_Init(void)
 #define TIMER3_TICK		(PCLK/8)
 
 const static unsigned int Tone_value[] = {261,277,293,311,329,349,369,391,415,440,466,493,523,554,587,622,659,698,739,783,830,880,932,987};
-const static unsigned int Note_delay[] = {BASE/4, BASE/2, BASE, BASE*2, BASE*4};
+const static unsigned int Note_delay[] = {BASE/4, BASE/2, BASE, BASE*2, BASE*4, BASE/25, BASE/25};
 
 void Timer3_Buzzer_Beep(int tone, int duration)
 {

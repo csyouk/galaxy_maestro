@@ -1,6 +1,6 @@
 #include "./Image/intro_bob.h"
 #include "./Image/minions.h"
-#include "./Image/tank_.h"
+#include "./Image/ufo_ico.h"
 #include "./Image/banana.h"
 #include "./Image/trace.h"
 #include "./Image/game_over.h"
@@ -78,7 +78,7 @@
 
 char* conv_int_to_string(int);
 char convert_intnum_to_charnum(int);
-
+void Sound_Effect(int);
 struct Object
 {
 	short timer;     	 	  // 몇번 타이머를 쓸 것인지?
@@ -90,14 +90,14 @@ struct Object
 	short color; // 나중에 이미지로 대체.
 	short speed_step;	 	  // 이미지가 얼마나 빨리 이동되게 할 것인지.
 	short move_step;		  // 이미지를 얼마나 이동시킬 것인가?
-	short missile_flag;		  // missile 발사 됐는지 여부 flag
+	short banana_flag;		  // banana 발사 됐는지 여부 flag
 	short cd_flag;		  // collision detection flag
 	short dir;           // 1,2,3,4번 키를 누름에 따라 미사일의 방향이 정해진다. 차례대로, up, left, down, right
-	short fired_cnt;        // tank 객체에서 미사일이 발사된 횟수를 관리한다.
-	short fly_dir[X_AND_Y]; // ufo의 x,y방향을 결정.
-	short fly_dir_back[X_AND_Y]; // ufo의 x,y방향을 결정.
-	short destroyed;              // ufo가 파괴되었는지 결정.
-	short launch_order;			// missile 발사 순서
+	short fired_cnt;        // ufo 객체에서 미사일이 발사된 횟수를 관리한다.
+	short fly_dir[X_AND_Y]; // minion의 x,y방향을 결정.
+	short fly_dir_back[X_AND_Y]; // minion의 x,y방향을 결정.
+	short destroyed;              // minion가 파괴되었는지 결정.
+	short launch_order;			// banana 발사 순서
 };
 
 
@@ -126,8 +126,9 @@ enum Color{
 };
 
 enum key{C1, C1_, D1, D1_, E1, F1, F1_, G1, G1_, A1, A1_, B1, C2, C2_, D2, D2_, E2, F2, F2_, G2, G2_, A2, A2_, B2};
-enum note{N16, N8, N4, N2, N1};
+enum note{N16, N8, N4, N2, N1, BEEP, CRASHED};
 const int song[][2] = {{G1,N4},{G1,N4},{E1,N8},{F1,N8},{G1,N4},{A1,N4},{A1,N4},{G1,N2},{G1,N4},{C2,N4},{E2,N4},{D2,N8},{C2,N8},{D2,N2},{0xff, 0xff}};
+
 
 /*
 terms about window edges
@@ -157,43 +158,43 @@ enum WINDOW{
 };
 
 
-enum TANK_DATA{
-	TANK_TIMER=0,
-	TANK_WIDTH=24,
-	TANK_HEIGHT=24,
-	TANK_POS_INIT_X=W_X_MAX/2 - TANK_WIDTH/2,
-	TANK_POS_INIT_Y=W_Y_MAX/2 - TANK_HEIGHT/2,
-	TANK_SPEED_RATE=1,
-	TANK_FOOTSTEP=5,
-	TANK_DIR=3,
-	TANK_FIRED_CNT=0
-};
-
 enum UFO_DATA{
-	UFO_WIDTH=20,
-	UFO_HEIGHT=20,
-	UFO_POS_INIT_X=120,
-	UFO_POS_INIT_Y=239,
 	UFO_TIMER=0,
-	UFO_SPEED_RATE=2,
-	UFO_FOOTSTEP=2,
+	UFO_WIDTH=24,
+	UFO_HEIGHT=24,
+	UFO_POS_INIT_X=W_X_MAX/2 - UFO_WIDTH/2,
+	UFO_POS_INIT_Y=W_Y_MAX/2 - UFO_HEIGHT/2,
+	UFO_SPEED_RATE=1,
+	UFO_FOOTSTEP=5,
 	UFO_DIR=3,
-	UFO_DIR_X=-1,
-	UFO_DIR_Y=-2,
-	UFO_DEST_BOUND=15
+	UFO_FIRED_CNT=0
 };
 
-enum MISSILE_DATA{
-	MISSILE_WIDTH=10,
-	MISSILE_HEIGHT=10,
-	MISSILE_TIMER=0,
-	MISSILE_SPEED_RATE=1,
-	MISSILE_FOOTSTEP=4,
-	MISSILE_DIR=3,
-	MISSILE_DEFAULT=-20
+enum MINION_DATA{
+	MINION_WIDTH=20,
+	MINION_HEIGHT=20,
+	MINION_POS_INIT_X=120,
+	MINION_POS_INIT_Y=239,
+	MINION_TIMER=0,
+	MINION_SPEED_RATE=2,
+	MINION_FOOTSTEP=2,
+	MINION_DIR=3,
+	MINION_DIR_X=-1,
+	MINION_DIR_Y=-2,
+	MINION_DEST_BOUND=15
 };
 
-enum STAGE_WITH_UFO{
+enum BANANA_DATA{
+	BANANA_WIDTH=10,
+	BANANA_HEIGHT=10,
+	BANANA_TIMER=0,
+	BANANA_SPEED_RATE=1,
+	BANANA_FOOTSTEP=4,
+	BANANA_DIR=3,
+	BANANA_DEFAULT=-20
+};
+
+enum STAGE_WITH_MINION{
 	GAME_OVER,
 	STAGE_1,
 	STAGE_2,
@@ -205,129 +206,129 @@ enum STAGE_WITH_UFO{
 	NO_MORE_STAGE=4
 };
 
-int ufos_in_stage[3] = {5,7,10};
+int minions_in_stage[3] = {5,7,10};
 
 struct KEY key_seq = {NOT_PRESSED_YET, DEFAULT};
 
-struct Object Tank = {
-	TANK_TIMER,
-	1,
-	{W_X_MAX/2 - TANK_WIDTH/2, W_Y_MAX/2 - TANK_HEIGHT/2},  // 현재 탱크 위치.
-	{TANK_POS_INIT_X,TANK_POS_INIT_Y},  // 초기화시킬 시 탱크 위치.
-	{0,10},  // 탱크의 위치가 움직이게 될 때, 탱크의 위치를 벡업.
-	{TANK_WIDTH,TANK_HEIGHT}, // 탱크의 크기. 가로 15, 세로 10
-	RED,
-	TANK_SPEED_RATE,
-	TANK_FOOTSTEP,
-	0,
-	0,
-	TANK_DIR,
-	TANK_FIRED_CNT,
-	{0,0},
-};
-
 struct Object Ufo = {
-	0,
+	UFO_TIMER,
 	1,
-	{UFO_POS_INIT_X,UFO_POS_INIT_Y},
-	{UFO_POS_INIT_X,UFO_POS_INIT_Y},
-	{160,300},
-	{UFO_WIDTH,UFO_HEIGHT},
-	BLUE,
+	{W_X_MAX/2 - UFO_WIDTH/2, W_Y_MAX/2 - UFO_HEIGHT/2},  // 현재 탱크 위치.
+	{UFO_POS_INIT_X,UFO_POS_INIT_Y},  // 초기화시킬 시 탱크 위치.
+	{0,10},  // 탱크의 위치가 움직이게 될 때, 탱크의 위치를 벡업.
+	{UFO_WIDTH,UFO_HEIGHT}, // 탱크의 크기. 가로 15, 세로 10
+	RED,
 	UFO_SPEED_RATE,
 	UFO_FOOTSTEP,
 	0,
 	0,
+	UFO_DIR,
+	UFO_FIRED_CNT,
+	{0,0},
+};
+
+struct Object Minion = {
+	0,
+	1,
+	{MINION_POS_INIT_X,MINION_POS_INIT_Y},
+	{MINION_POS_INIT_X,MINION_POS_INIT_Y},
+	{160,300},
+	{MINION_WIDTH,MINION_HEIGHT},
+	BLUE,
+	MINION_SPEED_RATE,
+	MINION_FOOTSTEP,
 	0,
 	0,
-	{UFO_DIR_X,UFO_DIR_Y},
+	0,
+	0,
+	{MINION_DIR_X,MINION_DIR_Y},
 	{1,1}
 };
 
-struct Object Missiles[5] = {
+struct Object Bananas[5] = {
 		{
-			MISSILE_TIMER,
+			BANANA_TIMER,
 			1,
 			{319,239},
 			{319,239},
 			{319,239},
-			{MISSILE_WIDTH,MISSILE_HEIGHT},
+			{BANANA_WIDTH,BANANA_HEIGHT},
 			GREEN,
-			MISSILE_SPEED_RATE,
-			MISSILE_FOOTSTEP,
+			BANANA_SPEED_RATE,
+			BANANA_FOOTSTEP,
 			0,
 			0,
-			MISSILE_DIR
+			BANANA_DIR
 		},
 		{
-			MISSILE_TIMER,
+			BANANA_TIMER,
 			1,
 			{319,239},
 			{319,239},
 			{319,239},
-			{MISSILE_WIDTH,MISSILE_HEIGHT},
+			{BANANA_WIDTH,BANANA_HEIGHT},
 			GREEN,
-			MISSILE_SPEED_RATE,
-			MISSILE_FOOTSTEP,
+			BANANA_SPEED_RATE,
+			BANANA_FOOTSTEP,
 			0,
 			0,
-			MISSILE_DIR
+			BANANA_DIR
 		},
 		{
-			MISSILE_TIMER,
+			BANANA_TIMER,
 			1,
 			{319,239},
 			{319,239},
 			{319,239},
-			{MISSILE_WIDTH,MISSILE_HEIGHT},
+			{BANANA_WIDTH,BANANA_HEIGHT},
 			GREEN,
-			MISSILE_SPEED_RATE,
-			MISSILE_FOOTSTEP,
+			BANANA_SPEED_RATE,
+			BANANA_FOOTSTEP,
 			0,
 			0,
-			MISSILE_DIR
+			BANANA_DIR
 		},
 		{
-			MISSILE_TIMER,
+			BANANA_TIMER,
 			1,
 			{319,239},
 			{319,239},
 			{319,239},
-			{MISSILE_WIDTH,MISSILE_HEIGHT},
+			{BANANA_WIDTH,BANANA_HEIGHT},
 			GREEN,
-			MISSILE_SPEED_RATE,
-			MISSILE_FOOTSTEP,
+			BANANA_SPEED_RATE,
+			BANANA_FOOTSTEP,
 			0,
 			0,
-			MISSILE_DIR
+			BANANA_DIR
 		},
 		{
-			MISSILE_TIMER,
+			BANANA_TIMER,
 			1,
 			{319,239},
 			{319,239},
 			{319,239},
-			{MISSILE_WIDTH,MISSILE_HEIGHT},
+			{BANANA_WIDTH,BANANA_HEIGHT},
 			GREEN,
-			MISSILE_SPEED_RATE,
-			MISSILE_FOOTSTEP,
+			BANANA_SPEED_RATE,
+			BANANA_FOOTSTEP,
 			0,
 			0,
-			MISSILE_DIR
+			BANANA_DIR
 		}
 };
 
-struct Object Ufos[10] = {
+struct Object Minions[10] = {
 		{
 			0,
 			1,
 			{160,300},
 			{160,300},
 			{160,300},
-			{UFO_WIDTH,UFO_HEIGHT},
+			{MINION_WIDTH,MINION_HEIGHT},
 			BLUE,
-			UFO_SPEED_RATE,
-			UFO_FOOTSTEP,
+			MINION_SPEED_RATE,
+			MINION_FOOTSTEP,
 			0,
 			0,
 			0,
@@ -340,10 +341,10 @@ struct Object Ufos[10] = {
 			{160,300},
 			{160,300},
 			{160,300},
-			{UFO_WIDTH,UFO_HEIGHT},
+			{MINION_WIDTH,MINION_HEIGHT},
 			BLUE,
-			UFO_SPEED_RATE,
-			UFO_FOOTSTEP,
+			MINION_SPEED_RATE,
+			MINION_FOOTSTEP,
 			0,
 			0,
 			0,
@@ -356,10 +357,10 @@ struct Object Ufos[10] = {
 			{160,300},
 			{160,300},
 			{160,300},
-			{UFO_WIDTH,UFO_HEIGHT},
+			{MINION_WIDTH,MINION_HEIGHT},
 			BLUE,
-			UFO_SPEED_RATE,
-			UFO_FOOTSTEP,
+			MINION_SPEED_RATE,
+			MINION_FOOTSTEP,
 			0,
 			0,
 			0,
@@ -372,10 +373,10 @@ struct Object Ufos[10] = {
 			{160,300},
 			{160,300},
 			{160,300},
-			{UFO_WIDTH,UFO_HEIGHT},
+			{MINION_WIDTH,MINION_HEIGHT},
 			BLUE,
-			UFO_SPEED_RATE,
-			UFO_FOOTSTEP,
+			MINION_SPEED_RATE,
+			MINION_FOOTSTEP,
 			0,
 			0,
 			0,
@@ -388,10 +389,10 @@ struct Object Ufos[10] = {
 			{160,300},
 			{160,300},
 			{160,300},
-			{UFO_WIDTH,UFO_HEIGHT},
+			{MINION_WIDTH,MINION_HEIGHT},
 			BLUE,
-			UFO_SPEED_RATE,
-			UFO_FOOTSTEP,
+			MINION_SPEED_RATE,
+			MINION_FOOTSTEP,
 			0,
 			0,
 			0,
@@ -404,10 +405,10 @@ struct Object Ufos[10] = {
 			{160,300},
 			{160,300},
 			{160,300},
-			{UFO_WIDTH,UFO_HEIGHT},
+			{MINION_WIDTH,MINION_HEIGHT},
 			BLUE,
-			UFO_SPEED_RATE,
-			UFO_FOOTSTEP,
+			MINION_SPEED_RATE,
+			MINION_FOOTSTEP,
 			0,
 			0,
 			0,
@@ -420,10 +421,10 @@ struct Object Ufos[10] = {
 			{160,300},
 			{160,300},
 			{160,300},
-			{UFO_WIDTH,UFO_HEIGHT},
+			{MINION_WIDTH,MINION_HEIGHT},
 			BLUE,
-			UFO_SPEED_RATE,
-			UFO_FOOTSTEP,
+			MINION_SPEED_RATE,
+			MINION_FOOTSTEP,
 			0,
 			0,
 			0,
@@ -436,10 +437,10 @@ struct Object Ufos[10] = {
 			{160,300},
 			{160,300},
 			{160,300},
-			{UFO_WIDTH,UFO_HEIGHT},
+			{MINION_WIDTH,MINION_HEIGHT},
 			BLUE,
-			UFO_SPEED_RATE,
-			UFO_FOOTSTEP,
+			MINION_SPEED_RATE,
+			MINION_FOOTSTEP,
 			0,
 			0,
 			0,
@@ -452,10 +453,10 @@ struct Object Ufos[10] = {
 			{160,300},
 			{160,300},
 			{160,300},
-			{UFO_WIDTH,UFO_HEIGHT},
+			{MINION_WIDTH,MINION_HEIGHT},
 			BLUE,
-			UFO_SPEED_RATE,
-			UFO_FOOTSTEP,
+			MINION_SPEED_RATE,
+			MINION_FOOTSTEP,
 			0,
 			0,
 			0,
@@ -468,10 +469,10 @@ struct Object Ufos[10] = {
 			{160,300},
 			{160,300},
 			{160,300},
-			{UFO_WIDTH,UFO_HEIGHT},
+			{MINION_WIDTH,MINION_HEIGHT},
 			BLUE,
-			UFO_SPEED_RATE,
-			UFO_FOOTSTEP,
+			MINION_SPEED_RATE,
+			MINION_FOOTSTEP,
 			0,
 			0,
 			0,
@@ -483,10 +484,10 @@ struct Object Ufos[10] = {
 
 char s_score[3]={0};
 int score = 0;
-int life = 4;
+int life = 4; // 4
 int game_state = WAIT_TO_START;
-int num_of_ufos = 3;
+int num_of_minions = 3;
 int curr_stage = ZERO;
-int curr_ufo_cnt;
+int curr_minion_cnt;
 int is_song_played = NO;
 
