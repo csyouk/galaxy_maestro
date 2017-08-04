@@ -62,8 +62,8 @@ void Main(void)
 	Key_Poll_Init();
 	Uart_Init(115200);
 	Timer0_Init();
-//	Timer3_Buzzer_Init();
-//	Timer4_Init();
+	Timer3_Buzzer_Init();
+	Timer4_Init();
 	Lcd_Graphic_Init();
 	Uart_Printf("Welcome to Galaxy Maestro Game!\n");
 

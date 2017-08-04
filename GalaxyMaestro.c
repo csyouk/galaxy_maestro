@@ -15,8 +15,10 @@ void Show_Loading_Animation_And_Stage(int);
 void Stage_With_Ufo(int);
 
 void Init_Game(void);
-void Init_Ufos(void);
+void Init_Ufos(int);
 void Init_Tank(void);
+
+void Reset_State(void);
 
 void Check_Game_State(void);
 void Check_Explosion(void);
@@ -54,6 +56,8 @@ int Tank_In_Ufo(int j);
 void disp_score(char*);
 void disp_life(char*);
 
+void YMCA_Song(void);
+
 bool is_object_in_lcd(struct Object *obj);
 
 
@@ -72,11 +76,13 @@ const unsigned short * Loading[] = { kb_0, kb_1, kb_2, kb_3, kb_4, kb_5, kb_6,
 
 void Galaxy_Maestro(void)
 {
+
 	if(game_state == GAME_OVER){
 		Show_Game_Over();
 		return;
 	}
-	if(game_state == FINISH || curr_stage == (STAGE_3 + 1)){
+
+	if(game_state == FINISH || curr_stage == NO_MORE_STAGE){
 		Show_Finish();
 		return;
 	}
@@ -88,9 +94,8 @@ void Galaxy_Maestro(void)
 		if(game_state == PENDING){
 			Show_Next();
 		}
-		if(curr_stage == (STAGE_3 + 1)) return;
+		if(curr_stage == NO_MORE_STAGE) return;
 		if(Key_Get_Pressed()){
-			print_game_state();
 			Show_Loading_Animation_And_Stage(curr_stage);
 			Stage_With_Ufo(ufos_in_stage[curr_stage]);
 		}
@@ -98,35 +103,52 @@ void Galaxy_Maestro(void)
 }
 
 void Show_Intro(){
-	Lcd_Draw_BMP(ZERO, ZERO, wait);
-	Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*6/7, RED, YELLOW, 2, 1, "PRESS TO START!");
+	Lcd_Draw_BMP(ZERO, ZERO, minions);
+	Lcd_Set_Shape_Mode(1, TRANSPARENCY);
+	Lcd_Printf(W_F_WIDTH/10, W_F_HEIGHT/11, YELLOW, TRANSPARENCY, 2, 2, "GIVE ME BANANA!!");
+
+	Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*10/11, YELLOW, TRANSPARENCY, 2, 1, "PRESS TO START!");
 	Timer4_Delay(100);
-	Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*6/7, BLUE, YELLOW, 2, 1, "PRESS TO START!");
+	Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*10/11, BLUE, TRANSPARENCY, 2, 1, "PRESS TO START!");
 	Timer4_Delay(100);
+	if(is_song_played == NO){
+		YMCA_Song();
+		is_song_played = !is_song_played;
+	}
 }
 
 void Show_Next(){
 	Lcd_Draw_BMP(ZERO, ZERO, next);
-	Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*6/7, RED, WHITE, 2, 1, "PRESS TO NEXT!!");
+	Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*6/7, RED, TRANSPARENCY, 2, 1, "PRESS TO NEXT!!");
 	Timer4_Delay(100);
-	Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*6/7, BLUE, WHITE, 2, 1, "PRESS TO NEXT!!");
+	Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*6/7, BLUE, TRANSPARENCY, 2, 1, "PRESS TO NEXT!!");
 	Timer4_Delay(100);
 }
 
 void Show_Game_Over(){
 	Lcd_Draw_BMP(ZERO, ZERO, game_over);
-	Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*6/7, RED, WHITE, 2, 1, "===GAME OVER===");
+	Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*7/8, RED, TRANSPARENCY, 2, 1, "===GAME OVER===");
 	Timer4_Delay(100);
-	Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*6/7, BLUE, WHITE, 2, 1, "===GAME OVER===");
+	Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*7/8, BLUE, TRANSPARENCY, 2, 1, "===GAME OVER===");
 	Timer4_Delay(100);
+	if(Key_Get_Pressed() == RESET){
+		game_state = WAIT_TO_START;
+		Reset_State();
+	}
 }
 
 void Show_Finish(){
 	Lcd_Draw_BMP(ZERO, ZERO, finish);
-	Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*6/7, RED, WHITE, 2, 1, "==GAME FINISH==");
+	Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*6/7, RED, TRANSPARENCY, 2, 1, "==GAME FINISH==");
 	Timer4_Delay(100);
-	Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*6/7, BLUE, WHITE, 2, 1, "==GAME FINISH==");
+	Lcd_Printf(W_F_WIDTH/7, W_F_HEIGHT*6/7, BLUE, TRANSPARENCY, 2, 1, "==GAME FINISH==");
 	Timer4_Delay(100);
+//	while(ONE){
+	if(Key_Get_Pressed() == RESET){
+		game_state = WAIT_TO_START;
+		Reset_State();
+	}
+//	}
 }
 
 void Show_Loading_Animation_And_Stage(int stage){
@@ -150,7 +172,7 @@ void Stage_With_Ufo(int ufo_cnt){
 
 	Init_Game();
 	Init_Tank();
-	Init_Ufos();
+	Init_Ufos(ufo_cnt);
 	Draw_Object();
 
 	while(game_state){
@@ -167,10 +189,10 @@ void Stage_With_Ufo(int ufo_cnt){
 void Init_Game(void)
 {
 	Lcd_Clr_Screen(BG_COLOR);
-	Timer0_Repeat(FREQ);
-	Lcd_Draw_Bar(W_X_MAX, W_Y_MIN, W_F_WIDTH-1, W_F_HEIGHT, RED);
-	Lcd_Printf(W_X_MAX, MARGIN, BLACK, RED, 1, 1, "SCORE");
-	Lcd_Printf(W_X_MAX + MARGIN, MARGIN*10, BLACK, RED, 1, 1, "LIFE");
+	Timer0_Repeat(GAME_SPEED);
+	Lcd_Draw_Bar(W_X_MAX, W_Y_MIN, W_F_WIDTH-1, W_F_HEIGHT, WHITE);
+	Lcd_Printf(W_X_MAX, MARGIN, YELLOW, WHITE, 1, 1, "SCORE");
+	Lcd_Printf(W_X_MAX + MARGIN, MARGIN*10, YELLOW, WHITE, 1, 1, "LIFE");
 	disp_score(conv_int_to_string(score));
 	disp_life(conv_int_to_string(life));
 	curr_ufo_cnt = ufos_in_stage[curr_stage];
@@ -198,15 +220,14 @@ void Init_Tank(void)
 	Tank.destroyed = UNDESTROYED;
 }
 
-void Init_Ufos()
+void Init_Ufos(int ufo_cnt)
 {
 	int i, dir_x, dir_y;
 	for(i = ZERO; i < num_of_ufos; i++){
-
 		dir_x = rand() % TWO - TWO;
 		dir_y = rand() % FIVE - TWO;
 		Ufos[i].speed_step = rand() % TWO + ONE;
-		Ufos[i].move_step = rand() % TWO + ONE;
+		Ufos[i].move_step = rand() % (ufo_cnt*2/3) + ONE;
 		Ufos[i].cd_flag = OBJECT_NOT_CRASHED;
 		Ufos[i].pos_back[X] = TWO;
 		Ufos[i].pos_back[Y] = TWO;
@@ -382,7 +403,10 @@ void Update_Missiles(int key)
 	}
 
 	if(key_seq.pre == NOT_PRESSED_YET || key_seq.pre != key_seq.cur){
-		if(key == FIRE && Tank.fired_cnt < NO_OF_MISSILES && Tank.pos[X] > MISSILE_WIDTH) {
+		if(key == FIRE &&
+			Tank.fired_cnt < NO_OF_MISSILES &&
+			Tank.pos[X] > MISSILE_WIDTH +1 &&
+			Tank.pos[X] < W_X_MAX - MISSILE_WIDTH -1) {
 			if(Tank.fired_cnt > NO_OF_MISSILES - 1) {
 				printf("exceed cnt : %d\n", Tank.fired_cnt);
 				Tank.fired_cnt = NO_OF_MISSILES - 1;
@@ -448,7 +472,7 @@ void Draw_Object(void)
 	Draw_Tank();
 	Draw_Ufo();
 	Draw_Missiles();
-	Check_Explosion();
+//	Check_Explosion();
 	Remove_Crashed_Missile();
 	Remove_Crashed_Ufo();
 	Remove_Crashed_Tank();
@@ -457,7 +481,7 @@ void Draw_Object(void)
 void Draw_State_Disp(void)
 {
 //	if(!Timer0_Check_Expired()) return;
-	disp_life(conv_int_to_string(life));
+	disp_life(conv_int_to_string(life + ONE));
 	disp_score(conv_int_to_string(score));
 }
 
@@ -477,11 +501,13 @@ void Draw_Tank(void)
 	// draw tank
 	if(Tank.move_flag != N_MOVE)
 	{
-		Remove_Prev_Frame(&Tank);
+//		Remove_Prev_Frame(&Tank);
+		Lcd_Draw_BMP(Tank.pos_back[X],Tank.pos_back[Y], trace);
 		Tank.move_flag = N_MOVE;
 	}
 
-	Draw_Curr_Frame(&Tank);
+//	Draw_Curr_Frame(&Tank);
+	Lcd_Draw_BMP(Tank.pos[X],Tank.pos[Y], tank_);
 }
 
 
@@ -495,7 +521,8 @@ void Draw_Ufo(void)
 			Ufos[i].pos[Y] < W_Y_MIN - UFO_HEIGHT)
 		{
 			Ufos[i].pos[Y] = Ufos[i].pos_back[Y];
-			Remove_Prev_Frame(&Ufos[i]);
+//			Remove_Prev_Frame(&Ufos[i]);
+			Lcd_Draw_BMP(Ufos[i].pos_back[X], Ufos[i].pos_back[Y], trace);
 		}
 
 		// draw Ufo
@@ -504,8 +531,12 @@ void Draw_Ufo(void)
 		   Ufos[i].destroyed == UNDESTROYED)
 		{
 //			ufo가 충돌없이 움직이고 있는 상태.
-			Remove_Prev_Frame(&Ufos[i]);
-			Draw_Curr_Frame(&Ufos[i]);
+
+			Lcd_Draw_BMP(Ufos[i].pos_back[X], Ufos[i].pos_back[Y], trace);
+			Lcd_Draw_BMP(Ufos[i].pos[X],Ufos[i].pos[Y], bob);
+			//			Remove_Prev_Frame(&Ufos[i]);
+			//			Draw_Curr_Frame(&Ufos[i]);
+
 		}
 
 	}
@@ -520,11 +551,12 @@ void Draw_Missiles()
 		if(
 		    (Missiles[i].pos[Y] > W_Y_MAX - MISSILE_HEIGHT) ||
 			(Missiles[i].pos[Y] < W_Y_MIN - MISSILE_HEIGHT) ||
-			(Missiles[i].pos[X] < W_X_MIN + MISSILE_WIDTH/2) ||
-			(Missiles[i].pos[X] > W_X_MAX - 2*MISSILE_WIDTH)
+			(Missiles[i].pos[X] < W_X_MIN + MISSILE_WIDTH) ||
+			(Missiles[i].pos[X] > W_X_MAX - MISSILE_WIDTH*2 - 1)
 			)
 		{
 			if(Missiles[i].missile_flag == FIRED){
+				Missiles[i].move_flag = N_MOVE;
 				Tank.fired_cnt--;
 				printf("cnt : %d\n", Tank.fired_cnt);
 			}
@@ -532,7 +564,9 @@ void Draw_Missiles()
 			Missiles[i].dir = Tank.dir;
 
 			if(Tank.fired_cnt < ZERO) Tank.fired_cnt = ZERO;
-			Remove_All_Frame(&Missiles[i]);
+//			Remove_All_Frame(&Missiles[i]);
+			Lcd_Draw_BMP(Missiles[i].pos_back[X],Missiles[i].pos_back[Y],trace);
+			Lcd_Draw_BMP(Missiles[i].pos[X],Missiles[i].pos[Y],trace);
 		}
 
 
@@ -540,13 +574,18 @@ void Draw_Missiles()
 		if(Missiles[i].move_flag != N_MOVE)
 		{
 			// not crashed case
-			Remove_Prev_Frame(&Missiles[i]);
-			Draw_Curr_Frame(&Missiles[i]);
+//			Remove_Prev_Frame(&Missiles[i]);
+//			Draw_Curr_Frame(&Missiles[i]);
+			Lcd_Draw_BMP(Missiles[i].pos_back[X],Missiles[i].pos_back[Y],trace);
+			Lcd_Draw_BMP(Missiles[i].pos[X],Missiles[i].pos[Y],banana);
 			Missiles[i].move_flag = N_MOVE;
 		}
 		if(Missiles[i].cd_flag != OBJECT_NOT_CRASHED){
 			// crashed case
-			Remove_All_Frame(&Missiles[i]);
+//			Remove_All_Frame(&Missiles[i]);
+			Lcd_Draw_BMP(Missiles[i].pos_back[X],Missiles[i].pos_back[Y],trace);
+			Lcd_Draw_BMP(Missiles[i].pos[X],Missiles[i].pos[Y],trace);
+
 		}
 	}
 }
@@ -572,7 +611,8 @@ void Remove_Crashed_Missile(void)
 		// draw tank beam object when crashed.
 		if(Missiles[i].cd_flag == OBJECT_CRASHED)
 		{
-			Remove_Prev_Frame(&Missiles[i]);
+//			Remove_Prev_Frame(&Missiles[i]);
+			Lcd_Draw_BMP(Missiles[i].pos_back[X],Missiles[i].pos_back[Y],trace);
 
 			// reverse state
 			Missiles[i].cd_flag = OBJECT_NOT_CRASHED;
@@ -591,14 +631,18 @@ void Remove_Crashed_Ufo(void)
 		// remove ufo object when crashed.
 		if(Ufos[i].cd_flag)
 		{
-			Remove_All_Frame(&Ufos[i]);
+//			Remove_All_Frame(&Ufos[i]);
+			Lcd_Draw_BMP(Ufos[i].pos_back[X],Ufos[i].pos_back[Y],trace);
+			Lcd_Draw_BMP(Ufos[i].pos[X],Ufos[i].pos[Y],trace);
 			Ufos[i].cd_flag = !Ufos[i].cd_flag;
 		}
 
 		if(Ufos[i].move_flag == N_MOVE && Ufos[i].destroyed == DESTROYED ){
 			// ufo가 충돌한 상태.
 			Ufos[i].move_flag = N_MOVE;
-			Remove_All_Frame(&Ufos[i]);
+//			Remove_All_Frame(&Ufos[i]);
+			Lcd_Draw_BMP(Ufos[i].pos_back[X],Ufos[i].pos_back[Y],trace);
+			Lcd_Draw_BMP(Ufos[i].pos[X],Ufos[i].pos[Y],trace);
 		}
 	}
 }
@@ -607,6 +651,8 @@ void Remove_Crashed_Tank(void)
 {
 	if(Tank.destroyed){
 		Remove_All_Frame(&Tank);
+		Lcd_Draw_BMP(Tank.pos_back[X],Tank.pos_back[Y], trace);
+		Lcd_Draw_BMP(Tank.pos[X],Tank.pos[Y], trace);
 		Init_Tank();
 	}
 }
@@ -614,20 +660,27 @@ void Remove_Crashed_Tank(void)
 
 void Check_Game_State()
 {
-	if(curr_stage >= (STAGE_3 + 1)) {
+	if(curr_ufo_cnt != ZERO) return;
+	if(curr_stage >= NO_MORE_STAGE) {
 		game_state=FINISH;
 		return;
 	}
-	if(curr_ufo_cnt != ZERO) return;
 	game_state=PENDING;
 	curr_stage++;
-	print_game_state();
 	if(curr_stage > STAGE_3){
 		game_state=FINISH;
 	}
 }
 
-
+void Reset_State()
+{
+	printf("reset!\n");
+	game_state = WAIT_TO_START;
+	score = ZERO;
+	life = 4;
+	curr_stage = ZERO;
+	curr_ufo_cnt = num_of_ufos = ufos_in_stage[curr_stage];
+}
 /* =====================================
  * check edge cases
  * =====================================
@@ -642,6 +695,31 @@ bool is_object_in_lcd(struct Object *obj)
  * remove / draw frame
  * =====================================
  */
+
+void YMCA_Song(void)
+{
+	Timer3_Buzzer_Beep(G1,N16);
+	Timer4_Delay(50);
+	Timer3_Buzzer_Beep(E1,N8);
+	Timer4_Delay(150);
+	Timer3_Buzzer_Beep(E1,N16);
+	Timer4_Delay(30);
+	Timer3_Buzzer_Beep(D1,N16);
+	Timer4_Delay(50);
+	Timer3_Buzzer_Beep(C1,N16);
+	Timer4_Delay(30);
+	Timer3_Buzzer_Beep(D1,N16);
+	Timer4_Delay(30);
+	Timer3_Buzzer_Beep(E1,N16);
+	Timer4_Delay(30);
+	Timer3_Buzzer_Beep(G1,N8);
+	Timer4_Delay(30);
+	Timer3_Buzzer_Beep(E1,N16);
+	Timer4_Delay(30);
+	Timer3_Buzzer_Beep(G1,N8);
+	Timer4_Delay(200);
+
+}
 
 void Remove_Prev_Frame(struct Object *obj)
 {
@@ -690,6 +768,15 @@ void Draw_Curr_Frame(struct Object *obj)
 		obj->color);
 }
 
+//void Draw_Curr_BMP(struct Object *obj, unsigned short *bmp)
+//{
+//	Lcd_Draw_BMP(
+//		obj->pos[X],
+//		obj->pos[Y],
+//		bmp
+//			);
+//}
+
 void Blinking(struct Object *obj , int color)
 {
 	Lcd_Draw_Bar(
@@ -737,12 +824,6 @@ void print_missile(int i){
 }
 
 void print_game_state(){
-//	STAGE_1=1,
-//	STAGE_2,
-//	STAGE_3,
-//	GAME_OVER,
-//	PENDING,
-//	WAIT_TO_START
 	printf("game_state : %d\n", game_state);
 	printf("num of ufo : %d\n", num_of_ufos);
 	printf("curr stage : %d\n", curr_stage + 1);
@@ -754,8 +835,8 @@ void print_game_state(){
  * =====================================
  */
 void disp_score(char *score){
-	Lcd_Printf(W_X_MAX + 5*MARGIN, 5*MARGIN, BLACK, RED, 1, 1, score);
+	Lcd_Printf(W_X_MAX + 5*MARGIN, 5*MARGIN, BLACK, WHITE, 1, 1, score);
 }
 void disp_life(char *life){
-	Lcd_Printf(W_X_MAX + 5*MARGIN, 14*MARGIN, BLACK, RED, 1, 1, life);
+	Lcd_Printf(W_X_MAX + 5*MARGIN, 14*MARGIN, BLACK, WHITE, 1, 1, life);
 }

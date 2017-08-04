@@ -1,5 +1,10 @@
 #include "./Image/intro_bob.h"
+#include "./Image/minions.h"
+#include "./Image/tank_.h"
+#include "./Image/banana.h"
+#include "./Image/trace.h"
 #include "./Image/game_over.h"
+#include "./Image/bob.h"
 #include "./Image/finish.h"
 #include "./Image/wait.h"
 #include "./Image/next.h"
@@ -67,7 +72,9 @@
 
 #define MARGIN 4
 
-#define FREQ 20
+#define GAME_SPEED 20
+#define YES 1
+#define NO 0
 
 char* conv_int_to_string(int);
 char convert_intnum_to_charnum(int);
@@ -103,7 +110,7 @@ typedef enum {false, true} bool;
 
 enum Game{OVER, START};
 
-enum Key{UP=1, LEFT, DOWN, RIGHT, FIRE};
+enum Key{UP=1, LEFT, DOWN, RIGHT, FIRE, RESET};
 
 enum Number{ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX};
 /* 5:5:5:I Color Definition */
@@ -114,8 +121,13 @@ enum Color{
 	GREEN=0x07c0,
 	RED=0xf800,
 	DARK_GREEN=0x534d,
-	YELLOW=0xfed9
+	YELLOW=0xfed9,
+	TRANSPARENCY=0xf0f1
 };
+
+enum key{C1, C1_, D1, D1_, E1, F1, F1_, G1, G1_, A1, A1_, B1, C2, C2_, D2, D2_, E2, F2, F2_, G2, G2_, A2, A2_, B2};
+enum note{N16, N8, N4, N2, N1};
+const int song[][2] = {{G1,N4},{G1,N4},{E1,N8},{F1,N8},{G1,N4},{A1,N4},{A1,N4},{G1,N2},{G1,N4},{C2,N4},{E2,N4},{D2,N8},{C2,N8},{D2,N2},{0xff, 0xff}};
 
 /*
 terms about window edges
@@ -166,15 +178,14 @@ enum UFO_DATA{
 	UFO_SPEED_RATE=2,
 	UFO_FOOTSTEP=2,
 	UFO_DIR=3,
-//	UFO_DIR_X=1,
 	UFO_DIR_X=-1,
 	UFO_DIR_Y=-2,
 	UFO_DEST_BOUND=15
 };
 
 enum MISSILE_DATA{
-	MISSILE_WIDTH=6,
-	MISSILE_HEIGHT=6,
+	MISSILE_WIDTH=10,
+	MISSILE_HEIGHT=10,
 	MISSILE_TIMER=0,
 	MISSILE_SPEED_RATE=1,
 	MISSILE_FOOTSTEP=4,
@@ -190,7 +201,8 @@ enum STAGE_WITH_UFO{
 	PENDING,
 	WAIT_TO_START,
 	ON_GOING,
-	FINISH
+	FINISH,
+	NO_MORE_STAGE=4
 };
 
 int ufos_in_stage[3] = {5,7,10};
@@ -476,4 +488,5 @@ int game_state = WAIT_TO_START;
 int num_of_ufos = 3;
 int curr_stage = ZERO;
 int curr_ufo_cnt;
+int is_song_played = NO;
 
