@@ -38,13 +38,10 @@ void Remove_Crashed_Banana(void);
 void Remove_Crashed_Minion(void);
 void Remove_Crashed_Ufo(void);
 
-
 int Banana_In_Minion(int);
 int Ufo_In_Minion(int j);
 
-
 void YMCA_Song(void);
-
 
 /* ====================================
  *  Bootstraping.
@@ -141,6 +138,7 @@ void Show_Loading_Animation_And_Stage(int stage){
 
 		}
 	}
+	Init_Bananas();
 }
 
 void Stage_With_Minion(int minion_cnt){
@@ -455,13 +453,16 @@ void Draw_Bananas()
 		{
 			if(Bananas[i].banana_flag == FIRED){
 				Bananas[i].move_flag = N_MOVE;
+				Remove_All_BMP(&Bananas[i]);
 				Ufo.fired_cnt--;
 			}
 			Bananas[i].banana_flag = NOT_FIRED;
 			Bananas[i].dir = Ufo.dir;
 
 			if(Ufo.fired_cnt < ZERO) Ufo.fired_cnt = ZERO;
-			Remove_All_BMP(&Bananas[i]);
+//			if(Bananas[i].move_flag == N_MOVE){
+//
+//			}
 		}
 
 		if(Bananas[i].move_flag != N_MOVE)
@@ -542,3 +543,13 @@ void Reset_State()
 }
 
 
+/* =====================================
+ * display character
+ * =====================================
+ */
+void disp_score(char *score){
+	Lcd_Printf(W_X_MAX + 5*MARGIN, 5*MARGIN, BLACK, WHITE, 1, 1, score);
+}
+void disp_life(char *life){
+	Lcd_Printf(W_X_MAX + 5*MARGIN, 14*MARGIN, BLACK, WHITE, 1, 1, life);
+}

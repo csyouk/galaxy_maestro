@@ -569,7 +569,36 @@ void Init_Banana_Pos(){
 
 	Bananas[Ufo.fired_cnt].pos[X] = Bananas[Ufo.fired_cnt].pos_init[X];
 	Bananas[Ufo.fired_cnt].pos[Y] = Bananas[Ufo.fired_cnt].pos_init[Y];
+}
 
+void Init_Designated_Banana_Pos(int i){
+	Bananas[i].banana_flag = FIRED;
+
+	Bananas[i].pos_init[X] = Ufo.pos[X];
+	Bananas[i].pos_init[Y] = Ufo.pos[Y];
+
+	Bananas[i].pos_back[X] = Bananas[i].pos_init[X];
+	Bananas[i].pos_back[Y] = Bananas[i].pos_init[Y];
+
+	Bananas[i].pos[X] = Bananas[i].pos_init[X];
+	Bananas[i].pos[Y] = Bananas[i].pos_init[Y];
+}
+
+void Init_Bananas(){
+	int i;
+	Ufo.fired_cnt = ZERO;
+	for(i=ZERO; i < FIVE; i++)
+	{
+		Bananas[i].pos_init[X] = Ufo.pos[X];
+		Bananas[i].pos_init[Y] = Ufo.pos[Y];
+
+		Bananas[i].pos_back[X] = Bananas[i].pos_init[X];
+		Bananas[i].pos_back[Y] = Bananas[i].pos_init[Y];
+
+		Bananas[i].pos[X] = Bananas[i].pos_init[X];
+		Bananas[i].pos[Y] = Bananas[i].pos_init[Y];
+
+	}
 }
 
 /* =====================================
@@ -615,16 +644,7 @@ void print_game_state(){
 
 
 
-/* =====================================
- * display character
- * =====================================
- */
-void disp_score(char *score){
-	Lcd_Printf(W_X_MAX + 5*MARGIN, 5*MARGIN, BLACK, WHITE, 1, 1, score);
-}
-void disp_life(char *life){
-	Lcd_Printf(W_X_MAX + 5*MARGIN, 14*MARGIN, BLACK, WHITE, 1, 1, life);
-}
+
 
 
 /* =====================================
@@ -785,7 +805,7 @@ char convert_intnum_to_charnum(int num)
 
 char* conv_int_to_string(int score)
 {
-	s_score[0] = convert_intnum_to_charnum(score/10);
-	s_score[1] = convert_intnum_to_charnum(score%10);
+	s_score[ZERO] = convert_intnum_to_charnum(score/10);
+	s_score[ONE] = convert_intnum_to_charnum(score%10);
 	return s_score;
 }

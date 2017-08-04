@@ -4,10 +4,6 @@ enum key{C1, C1_, D1, D1_, E1, F1, F1_, G1, G1_, A1, A1_, B1, C2, C2_, D2, D2_, 
 enum note{N16, N8, N4, N2, N1, BEEP, CRASHED};
 
 
-extern char s_score[3];
-
-
-
 void Sound_Effect(int effect)
 {
 	switch(effect){
