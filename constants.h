@@ -76,9 +76,13 @@
 #define YES 1
 #define NO 0
 
+#define BG_COLOR WHITE
+#define printf 	Uart_Printf
+
 char* conv_int_to_string(int);
 char convert_intnum_to_charnum(int);
 void Sound_Effect(int);
+
 struct Object
 {
 	short timer;     	 	  // 몇번 타이머를 쓸 것인지?
@@ -481,13 +485,307 @@ struct Object Minions[10] = {
 		}
 };
 
+const unsigned short * Loading[] = { kb_0, kb_1, kb_2, kb_3, kb_4, kb_5, kb_6,
+		kb_7, kb_8, kb_9, kb_10, kb_11, kb_12, kb_13, kb_14, kb_15, kb_16,
+		kb_17, kb_18, kb_19, kb_20, kb_21, kb_22, kb_23, kb_24, kb_25, kb_26,
+		kb_27, kb_28, kb_29, kb_30, kb_31, kb_32, kb_33, kb_34, kb_35, kb_36,
+		kb_37, kb_38, kb_39, kb_40, kb_41};
 
 char s_score[3]={0};
 int score = 0;
-int life = 4; // 4
+int life = 3; // 4
 int game_state = WAIT_TO_START;
 int num_of_minions = 3;
 int curr_stage = ZERO;
 int curr_minion_cnt;
 int is_song_played = NO;
 
+/* =====================================
+ * Initialize object properties.
+ * =====================================
+ */
+
+void Init_Game(void)
+{
+	Lcd_Clr_Screen(BG_COLOR);
+	Timer0_Repeat(GAME_SPEED);
+	Lcd_Draw_Bar(W_X_MAX, W_Y_MIN, W_F_WIDTH-1, W_F_HEIGHT, WHITE);
+	Lcd_Printf(W_X_MAX, MARGIN, YELLOW, WHITE, 1, 1, "SCORE");
+	Lcd_Printf(W_X_MAX + MARGIN, MARGIN*10, YELLOW, WHITE, 1, 1, "LIFE");
+	disp_score(conv_int_to_string(score));
+	disp_life(conv_int_to_string(life));
+	curr_minion_cnt = minions_in_stage[curr_stage];
+	game_state = (game_state == GAME_OVER) ? GAME_OVER : ON_GOING;
+}
+
+void Init_Ufo(void)
+{
+	Ufo.timer = ZERO;
+	Ufo.move_flag = N_MOVE;
+	Ufo.pos[X] = UFO_POS_INIT_X;
+	Ufo.pos[Y] = UFO_POS_INIT_Y;
+	Ufo.pos_init[X] = UFO_POS_INIT_X;
+	Ufo.pos_init[Y] = UFO_POS_INIT_Y;
+	Ufo.pos_back[X] = UFO_POS_INIT_X;
+	Ufo.pos_back[Y] = UFO_POS_INIT_Y;
+	Ufo.size[X] = UFO_WIDTH;
+	Ufo.size[Y] = UFO_HEIGHT;
+	Ufo.color = RED;
+	Ufo.speed_step = UFO_SPEED_RATE;
+	Ufo.move_step =  UFO_FOOTSTEP;
+	Ufo.cd_flag = OBJECT_NOT_CRASHED;
+	Ufo.dir = DOWN;
+	Ufo.fired_cnt = ZERO;
+	Ufo.destroyed = UNDESTROYED;
+}
+
+void Init_Minions(int minion_cnt)
+{
+	int i, dir_x, dir_y;
+	for(i = ZERO; i < num_of_minions; i++){
+		dir_x = rand() % TWO - TWO;
+		dir_y = rand() % FIVE - TWO;
+		Minions[i].speed_step = rand() % TWO + ONE;
+		Minions[i].move_step = rand() % (minion_cnt*2/3) + ONE;
+		Minions[i].cd_flag = OBJECT_NOT_CRASHED;
+		Minions[i].pos_back[X] = TWO;
+		Minions[i].pos_back[Y] = TWO;
+		Minions[i].destroyed = UNDESTROYED;
+		Minions[i].pos[X] = rand() % W_X_MAX/FIVE + MINION_WIDTH * TWO;
+		Minions[i].pos[Y] = rand() % W_Y_MAX/FIVE + MINION_HEIGHT * TWO;
+		Minions[i].fly_dir[X] = (dir_x == ZERO)? THREE : dir_x;
+		Minions[i].fly_dir[Y] = (dir_y == ZERO)? -THREE : dir_y;
+	}
+}
+
+void Init_Banana_Pos(){
+	Bananas[Ufo.fired_cnt].banana_flag = FIRED;
+
+	Bananas[Ufo.fired_cnt].pos_init[X] = Ufo.pos[X];
+	Bananas[Ufo.fired_cnt].pos_init[Y] = Ufo.pos[Y];
+
+	Bananas[Ufo.fired_cnt].pos_back[X] = Bananas[Ufo.fired_cnt].pos_init[X];
+	Bananas[Ufo.fired_cnt].pos_back[Y] = Bananas[Ufo.fired_cnt].pos_init[Y];
+
+	Bananas[Ufo.fired_cnt].pos[X] = Bananas[Ufo.fired_cnt].pos_init[X];
+	Bananas[Ufo.fired_cnt].pos[Y] = Bananas[Ufo.fired_cnt].pos_init[Y];
+
+}
+
+/* =====================================
+ * print states of objects
+ * =====================================
+ */
+void print_ufo(void){
+	printf("==================ufo===============\n");
+	printf("Timer : %d\n", Ufo.timer);
+	printf("move_flag : %d\n", Ufo.move_flag);
+	printf("pos[X] %d / pos[Y] %d\n", Ufo.pos[X], Ufo.pos[Y]);
+	printf("pos_back[X] %d / pos_back[Y] %d\n", Ufo.pos_back[X], Ufo.pos_back[Y]);
+	printf("size[X] %d / size[Y] %d\n", Ufo.size[X], Ufo.size[Y]);
+	printf("ufo direction %d\n", Ufo.dir);
+}
+void print_minion(int i){
+	printf("==================minion===============\n");
+	printf("Minion Timer : %d\n", Minions[i].timer);
+	printf("Minion move_flag : %d\n", Minions[i].move_flag);
+	printf("Minion cd_flag : %d\n", Minions[i].cd_flag);
+	printf("Minion pos[X] %d / pos[Y] %d\n", Minions[i].pos[X], Minions[i].pos[Y]);
+	printf("Minion pos_back[X] %d / pos_back[Y] %d\n", Minions[i].pos_back[X], Minions[i].pos_back[Y]);
+	printf("Minion size[X] %d / size[Y] %d\n", Minions[i].size[X], Minions[i].size[Y]);
+	printf("Minion fly_dir[X] %d / fly_di[Y] %d\n", Minions[i].fly_dir[X], Minions[i].fly_dir[Y]);
+}
+
+void print_banana(int i){
+	printf("==================banana===============\n");
+	printf("Bananas[%d] Timer : %d\n", i, Bananas[i].timer);
+	printf("Bananas[%d] move_flag : %d\n", i, Bananas[i].move_flag);
+	printf("Bananas[%d] pos[X] %d / pos[Y] %d\n", i, Bananas[i].pos[X], Bananas[i].pos[Y]);
+	printf("Bananas[%d] pos_back[X] %d / pos_back[Y] %d\n", i, Bananas[i].pos_back[X], Bananas[i].pos_back[Y]);
+	printf("Bananas[%d] size[X] %d / size[Y] %d\n", i, Bananas[i].size[X], Bananas[i].size[Y]);
+	printf("Bananas[%d] dir : %d\n", i, Bananas[i].dir);
+}
+
+void print_game_state(){
+	printf("game_state : %d\n", game_state);
+	printf("num of minion : %d\n", num_of_minions);
+	printf("curr stage : %d\n", curr_stage + 1);
+	printf("curr minion cnt : %d\n", curr_minion_cnt);
+}
+
+
+
+/* =====================================
+ * display character
+ * =====================================
+ */
+void disp_score(char *score){
+	Lcd_Printf(W_X_MAX + 5*MARGIN, 5*MARGIN, BLACK, WHITE, 1, 1, score);
+}
+void disp_life(char *life){
+	Lcd_Printf(W_X_MAX + 5*MARGIN, 14*MARGIN, BLACK, WHITE, 1, 1, life);
+}
+
+
+/* =====================================
+ * effect
+ * =====================================
+ */
+
+void Blinking(struct Object *obj , int color)
+{
+	Lcd_Draw_Bar(
+		obj->pos[X],
+		obj->pos[Y],
+		obj->pos[X] + obj->size[X],
+		obj->pos[Y] + obj->size[Y],
+		color);
+	Timer4_Delay(50);
+}
+
+void Check_Explosion(void)
+{
+	int i;
+	for(i = ZERO; i < num_of_minions; i++){
+		if(Minions[i].destroyed && Minions[i].cd_flag){
+			Blinking(&Minions[i], WHITE);
+			Blinking(&Minions[i], BLUE);
+			Blinking(&Minions[i], RED);
+			Blinking(&Minions[i], BLACK);
+		}
+	}
+}
+
+void YMCA_Song(void)
+{
+	Timer3_Buzzer_Beep(G1,N16);
+	Timer4_Delay(50);
+	Timer3_Buzzer_Beep(E1,N8);
+	Timer4_Delay(150);
+	Timer3_Buzzer_Beep(E1,N16);
+	Timer4_Delay(30);
+	Timer3_Buzzer_Beep(D1,N16);
+	Timer4_Delay(50);
+	Timer3_Buzzer_Beep(C1,N16);
+	Timer4_Delay(30);
+	Timer3_Buzzer_Beep(D1,N16);
+	Timer4_Delay(30);
+	Timer3_Buzzer_Beep(E1,N16);
+	Timer4_Delay(30);
+	Timer3_Buzzer_Beep(G1,N8);
+	Timer4_Delay(30);
+	Timer3_Buzzer_Beep(E1,N16);
+	Timer4_Delay(30);
+	Timer3_Buzzer_Beep(G1,N8);
+	Timer4_Delay(200);
+
+}
+/* =====================================
+ * remove / draw frame
+ * =====================================
+ */
+
+void Remove_Prev_Frame(struct Object *obj)
+{
+	Lcd_Draw_Bar(
+		obj->pos_back[X],
+		obj->pos_back[Y],
+		obj->pos_back[X] + obj->size[X],
+		obj->pos_back[Y] + obj->size[Y],
+		BG_COLOR);
+}
+
+void Remove_Curr_Frame(struct Object *obj)
+{
+	// remove previous state in lcd
+	Lcd_Draw_Bar(
+		obj->pos[X],
+		obj->pos[Y],
+		obj->pos[X] + obj->size[X],
+		obj->pos[Y] + obj->size[Y],
+		BG_COLOR);
+}
+
+void Remove_All_Frame(struct Object *obj)
+{
+	Lcd_Draw_Bar(
+		obj->pos[X],
+		obj->pos[Y],
+		obj->pos[X] + obj->size[X],
+		obj->pos[Y] + obj->size[Y],
+		BG_COLOR);
+	Lcd_Draw_Bar(
+		obj->pos_back[X],
+		obj->pos_back[Y],
+		obj->pos_back[X] + obj->size[X],
+		obj->pos_back[Y] + obj->size[Y],
+		BG_COLOR);
+}
+
+void Draw_Curr_Frame(struct Object *obj)
+{
+	Lcd_Draw_Bar(
+		obj->pos[X],
+		obj->pos[Y],
+		obj->pos[X] + obj->size[X],
+		obj->pos[Y] + obj->size[Y],
+		obj->color);
+}
+
+void Draw_Curr_BMP(struct Object *obj, const unsigned short *bmp)
+{
+	Lcd_Draw_BMP(
+		obj->pos[X],
+		obj->pos[Y],
+		bmp);
+}
+
+void Remove_Prev_BMP(struct Object *obj)
+{
+	Lcd_Draw_BMP(
+		obj->pos_back[X],
+		obj->pos_back[Y],
+		trace);
+}
+
+void Remove_Curr_BMP(struct Object *obj)
+{
+	Lcd_Draw_BMP(
+		obj->pos[X],
+		obj->pos[Y],
+		trace);
+}
+
+void Remove_All_BMP(struct Object *obj)
+{
+	Remove_Prev_BMP(obj);
+	Remove_Curr_BMP(obj);
+}
+
+/* =====================================
+ * common logics
+ * =====================================
+ */
+
+bool is_object_in_lcd(struct Object *obj)
+{
+	return false;
+}
+
+void Backup_Pos(struct Object *obj)
+{
+	obj-> pos_back[X] = obj->pos[X];
+	obj-> pos_back[Y] = obj->pos[Y];
+}
+
+char convert_intnum_to_charnum(int num)
+{
+	return num + '0';
+}
+
+char* conv_int_to_string(int score)
+{
+	s_score[0] = convert_intnum_to_charnum(score/10);
+	s_score[1] = convert_intnum_to_charnum(score%10);
+	return s_score;
+}
